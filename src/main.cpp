@@ -14,6 +14,8 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
+#include <timepix.h>
+
 using namespace std;
 using namespace cv;
 
@@ -37,6 +39,10 @@ int main(int argc, char** argv) {
 
   // lets tell the world we are read
   ROS_INFO("ROSPix initialized");
+
+  TimepixHandler * timepix = new TimepixHandler();
+
+  ROS_INFO("pes");
 
   // infinite loop
   while (ros::ok()) {

@@ -119,11 +119,16 @@ include_directories(include
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-add_executable(rospix src/main.cpp)
+set(CMAKE_CXX_FLAGS "-lftd2xx")
+
+add_executable(rospix src/main.cpp src/timepix.cpp)
 
 add_dependencies(rospix ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(rospix ${catkin_LIBRARIES})
+target_link_libraries(rospix
+  ${catkin_LIBRARIES}
+  ftd2xx
+)
 
 install(TARGETS
 		ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
