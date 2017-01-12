@@ -32,17 +32,15 @@ int main(int argc, char** argv) {
 
   // initialize node and create no handle
   ros::init(argc, argv, "rospix");
-  ros::NodeHandle nh = ros::NodeHandle("~");
+  ros::NodeHandle nh_ = ros::NodeHandle("~");
 
   // load config
-  nh.param("gui", gui, bool(true));
+  nh_.param("gui", gui, bool(true));
 
   // lets tell the world we are read
-  ROS_INFO("ROSPix initialized");
+  ROS_INFO("ROSPix node initialized");
 
-  TimepixHandler * timepix = new TimepixHandler();
-
-  ROS_INFO("pes");
+  TimepixHandler * timepix = new TimepixHandler(nh_);
 
   // infinite loop
   while (ros::ok()) {
