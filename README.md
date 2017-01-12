@@ -19,6 +19,9 @@ wget http://www.ftdichip.com/Drivers/D2XX/Linux/libftd2xx-x86_64-1.3.6.tgz
 
 Install them:
 ```bash
+sudo usermod -a -G dialout $USER
+cd /tmp
+tar xvfz libftd2xx*
 cd /tmp/release/build
 sudo cp libftd2xx.* /usr/local/lib
 sudo chmod 0755 /usr/local/lib/libftd2xx.so.1.3.6
