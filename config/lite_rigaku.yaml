@@ -1,0 +1,16 @@
+number_of_detectors: 1
+
+# indexing from 0, 0..number_of_detectors
+Sensor_0:
+
+  # by this name the device is found, run "rosrun rospix list_devices to see it"
+  name: 'Medipix2 ver 1.32 sn: 1096'
+
+  # this is how it will be named in ros
+  custom_name: 'lite'
+  equalization: 'somefile.txt'
+  
+  defaults:
+    threshold: 350
+    bias: 50  # [Volt]
+    exposure: 1.0 # [second]

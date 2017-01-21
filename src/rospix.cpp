@@ -14,7 +14,7 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
-#include <timepix.h>
+#include <timepix_handler.h>
 
 using namespace std;
 using namespace cv;
@@ -23,10 +23,9 @@ using namespace cv;
 Mat frame_global;
 
 // pointer to OpenCV bridge
-cv_bridge::CvImage cv_ptr;
+cv_bridge::CvImage cv_ptr;;
 
-// use gui?
-bool gui = true;
+list<TimepixHandler *> sensors;
 
 int main(int argc, char** argv) {
 
@@ -34,17 +33,30 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "rospix");
   ros::NodeHandle nh_ = ros::NodeHandle("~");
 
-  // load config
-  nh_.param("gui", gui, bool(true));
-
   // lets tell the world we are read
   ROS_INFO("ROSPix node initialized");
 
-  TimepixHandler * timepix = new TimepixHandler(nh_);
+  int number_of_detectors;
+  
+  nh_.param("number_of_detectors", number_of_detectors, 0);
+ 
+  // iterate over all the detectors in the config file and try to open them
+  for (int i = 0; i < number_of_detectors; i++) {
 
-  // infinite loop
-  while (ros::ok()) {
+    char id_char[10];
+    sprintf(id_char, "Sensor_%d", i);
+    string id_str = string(id_char);
 
-    ros::spinOnce();
+    TimepixHandler * sensor = new TimepixHandler(ros::NodeHandle(string("~/")+id_str));
+
+    if (!sensor->open()) {
+       ROS_WARN("Failed to open \"%s\"", id_str.c_str());
+    } else {  
+      sensors.push_back(sensor);
+    }
   }
+
+  ros::spin();
+
+  return 0;
 }

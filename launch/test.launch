@@ -1,13 +1,10 @@
 <launch>
 
-  <!-- allows disabling the gui from command line -->
-  <arg name="gui" default="false" />
-
   <!-- launch the node -->
   <node name="rospix" pkg="rospix" type="rospix" output="screen">
 
     <!-- load config from config file -->
-    <rosparam file="$(find rospix)/config/config.yaml" />
+    <rosparam file="$(find rospix)/config/lite_rigaku.yaml" />
 
   </node>
 

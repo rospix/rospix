@@ -128,6 +128,7 @@ execute_process(COMMAND
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
+# Choose the timepix library based on the system architectur
 if(${CMAKE_DEB_HOST_ARCH} MATCHES "armhf")
   set(EXTRALIB_BIN ${PROJECT_SOURCE_DIR}/lib/armhf/libtpx.so)
 elseif(${CMAKE_DEB_HOST_ARCH} MATCHES "i386")
@@ -138,17 +139,17 @@ else()
   MESSAGE(FATAL_ERROR "Library for timepix has not been selected, check CMakeLists.txt.")
 endif()
 
-add_executable(rospix src/main.cpp src/timepix.cpp)
+# the main app
+add_executable(rospix src/rospix.cpp src/timepix_handler.cpp)
 add_dependencies(rospix ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
 target_link_libraries(rospix
   ${catkin_LIBRARIES}
-  #${EXTRALIB_BIN}
+  ${EXTRALIB_BIN}
 )
 
+# list devices
 add_executable(list_devices src/list_devices.cpp)
 add_dependencies(list_devices ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
 target_link_libraries(list_devices
   ${catkin_LIBRARIES}
   ${EXTRALIB_BIN}

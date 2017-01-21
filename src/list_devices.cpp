@@ -6,10 +6,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+// timepix library
 #include "usb.h"
-
-// use gui?
-bool gui = true;
 
 int main(int argc, char** argv) {
 
@@ -17,7 +15,7 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "list_devices");
   ros::NodeHandle nh_ = ros::NodeHandle("~");
 
-  // List USB Lite devices
+  //////////////////// List Usb Lite devices \\\\\\\\\\\\\\\\\\\\\
 
   const char* devNames[50];
   int devCount = 0;
@@ -26,10 +24,10 @@ int main(int argc, char** argv) {
 
   for (int i = 0; i < devCount; i++) {
 
-    ROS_INFO("USB LIte n.%d: %s", i+1, devNames[i]);
+    ROS_INFO("USB LIte n.%d: \"%s\"", i+1, devNames[i]);
   }
 
-  // List FitPix devices
+  //////////////////// List Fitpix devices \\\\\\\\\\\\\\\\\\\\\
 
   listDevicesFpx(devNames, &devCount);
 
@@ -37,7 +35,6 @@ int main(int argc, char** argv) {
 
     ROS_INFO("FitPix n.%d: \"%s\"", i+1, devNames[i]);
   }
-
 
   return 0;
 }
