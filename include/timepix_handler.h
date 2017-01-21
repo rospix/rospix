@@ -44,6 +44,16 @@ class TimepixHandler {
     // node handle
     ros::NodeHandle nh_;
 
+    uint16_t dacs[14];
+    uint16_t threshold;  
+    double exposure;
+    double bias;
+
+  private:
+
+    bool loadDacs(); 
+    bool setThreshold(const uint16_t newThreshold);
+    bool setNewBias(const double newBias);
 };
 
 #endif

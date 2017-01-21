@@ -14,3 +14,6 @@ Sensor_0:
     threshold: 350
     bias: 50  # [Volt]
     exposure: 1.0 # [second]
+
+    # dacs can be found in calibration protocol (or equalization protocol)
+    dacs: [1,100,255,127,127,0,450,7,130,128,80,85,128,128]
