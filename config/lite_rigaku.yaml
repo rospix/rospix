@@ -8,12 +8,13 @@ Sensor_0:
 
   # this is how it will be named in ros
   custom_name: 'lite'
-  equalization: 'somefile.txt'
+  equalization: '/home/klaxalk/equalizace.txt'
   
   defaults:
-    threshold: 350
-    bias: 50  # [Volt]
+    threshold: 300
+    bias: 10.0  # [Volt]
     exposure: 1.0 # [second]
+    mode: 1 # [0 = MPX, 1 = TOT]
 
     # dacs can be found in calibration protocol (or equalization protocol)
-    dacs: [1,100,255,127,127,0,450,7,130,128,80,85,128,128]
+    dacs: [1,100,255,127,127,0,300,7,130,128,80,85,128,128]

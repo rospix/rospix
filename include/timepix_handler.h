@@ -4,8 +4,16 @@
 /* author: Tomas Baca */
 #include <ros/ros.h>
 #include <string>
+#include <rospix/SingleExposure.h>
+
+// regarding image transport
+#include <image_transport/image_transport.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <cv_bridge/cv_bridge.h>
 
 using namespace std;
+
+#define MATRIX_SIZE 65536
 
 typedef enum {
 
@@ -14,6 +22,10 @@ typedef enum {
 
 } InterfaceType_t;
 
+enum {
+  MPX,
+  TOT
+} SensorMode_t;
 
 class TimepixHandler {
 
@@ -48,12 +60,33 @@ class TimepixHandler {
     uint16_t threshold;  
     double exposure;
     double bias;
+    int mode;
+    string equalization_file;
+    bool equalization_loaded;
+
+    uint16_t image[MATRIX_SIZE];
+    uint8_t equalization[MATRIX_SIZE];
 
   private:
 
     bool loadDacs(); 
     bool setThreshold(const uint16_t newThreshold);
     bool setNewBias(const double newBias);
+    bool loadEqualization(const string filename);
+    bool doExposure(double time);
+    bool readImage();
+    bool publishImage();
+    bool setEqualization();
+    bool setMode(int newmode);
+
+  private:
+
+    ros::ServiceServer service_single_exposure;
+    image_transport::Publisher image_publisher;
+
+  private:
+
+    bool singleExposureCallback(rospix::SingleExposure::Request &req, rospix::SingleExposure::Response &res);
 };
 
 #endif
