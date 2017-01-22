@@ -11,8 +11,8 @@ Sensor_0:
   equalization: '/home/klaxalk/equalisation.bpc'
   
   defaults:
-    threshold: 350
-    bias: 5.0  # [Volt]
+    threshold: 340
+    bias: 10.0  # [Volt]
     exposure: 1.0 # [second]
     mode: 1 # [0 = MPX, 1 = TOT]
 
