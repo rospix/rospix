@@ -1,0 +1,5 @@
+float64 exposure_time
+int32 exposure_count
+---
+bool success
+string message

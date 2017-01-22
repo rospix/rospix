@@ -1,4 +1,4 @@
-number_of_detectors: 1
+number_of_detectors: 2
 
 # indexing from 0, 0..number_of_detectors
 Sensor_0:
@@ -8,13 +8,25 @@ Sensor_0:
 
   # this is how it will be named in ros
   custom_name: 'lite'
-  equalization: '/home/klaxalk/equalizace.txt'
+  equalization: '/home/klaxalk/equalisation.bpc'
   
   defaults:
-    threshold: 300
+    threshold: 350
     bias: 10.0  # [Volt]
     exposure: 1.0 # [second]
     mode: 1 # [0 = MPX, 1 = TOT]
 
     # dacs can be found in calibration protocol (or equalization protocol)
-    dacs: [1,100,255,127,127,0,300,7,130,128,80,85,128,128]
+    dacs: [1,100,255,127,127,0,350,7,130,128,80,85,128,128]
+
+Sensor_1:
+
+  name: 'dummy'
+
+  simulate_focus: true
+  photon_flux: 100       # [photons/s], whole number
+
+  defaults:
+
+    exposure: 1.0 # [second]
+

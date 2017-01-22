@@ -13,9 +13,12 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
-
 add_service_files(FILES
-  SingleExposure.srv
+  Exposure.srv
+  BatchExposure.srv
+  SetThreshold.srv
+  SetBias.srv
+  SetMode.srv
 )
 
 generate_messages(DEPENDENCIES
