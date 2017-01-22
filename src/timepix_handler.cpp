@@ -34,7 +34,7 @@ TimepixHandler::TimepixHandler(ros::NodeHandle nh) {
 
     dummy = true;
     opened = true;
-    
+
     nh_.param("simulate_focus", dummy_simulate_focus, false);
     nh_.param("photon_flux", dummy_photon_flux, 100);
 
@@ -106,6 +106,11 @@ void TimepixHandler::changeState(State_t new_state) {
 
 void TimepixHandler::doSingleExposure(void) {
 
+  if (!loadDacs()) {
+
+    ROS_ERROR("Error during setting DACs before an exposure");
+  }
+
   if (!doExposure(exposure)) {
 
     ROS_ERROR("Error while doing single exposure.");
@@ -169,7 +174,7 @@ void TimepixHandler::mainThread(void) {
         exposing = true;
 
         for (int i = 0; i < batch_exposure_count; i++) {
-          
+
           doSingleExposure();
         }
 
@@ -235,6 +240,8 @@ bool TimepixHandler::open(void) {
     service_continuous_exposure = nh_.advertiseService("do_continuous_exposure", &TimepixHandler::continuouExposureCallback, this);
     service_batch_exposure = nh_.advertiseService("do_batch_exposure", &TimepixHandler::batchExposureCallback, this);
     service_set_mode = nh_.advertiseService("set_mode", &TimepixHandler::setModeCallback, this);
+    service_set_bias = nh_.advertiseService("set_bias", &TimepixHandler::setBiasCallback, this);
+    service_set_threshold = nh_.advertiseService("set_threshold", &TimepixHandler::setThresholdCallback, this);
     service_interrupt_measurement = nh_.advertiseService("interrupt_measurement", &TimepixHandler::interruptMeasurementCallback, this);
 
     // create publishers
@@ -314,6 +321,8 @@ bool TimepixHandler::loadDacs(void) {
   if (dummy)
     return true;
 
+  dacs[6] = threshold;
+
   int rc = 0;
 
   switch (interface) {
@@ -390,13 +399,12 @@ bool TimepixHandler::loadEqualization(const string filename) {
   }
 
   uint8_t tempByte;
-  for (int i = 0; i < 65536; i++){
+  for (int i = 0; i < 65536; i++) {
 
     if (fread(&tempByte, 1, 1, F) != 1) {
 
       ROS_ERROR("Error reading eqialization file!");
       return false;
-
     }
 
     equalization[i] = tempByte;
@@ -488,7 +496,7 @@ double TimepixHandler::samplePseudoNormal(double mean, double std) {
   double temp = 0;
 
   for (int i = 0; i < 10; i++) {
-    
+
     temp += randf(-1, 1) * std;
   }
 
@@ -502,14 +510,14 @@ double TimepixHandler::samplePseudoNormal(double mean, double std) {
 double TimepixHandler::randf(double from, double to) {
 
   double zero_to_one = double((float) rand()) / double(RAND_MAX);
-  
+
   return (to - from)*zero_to_one + from;
 }
 
 int TimepixHandler::randi(int from, int to) {
 
   double zero_to_one = double((float) rand()) / double(RAND_MAX);
-  
+
   return int(floor(to - from)*zero_to_one) + from;
 }
 
@@ -523,7 +531,7 @@ void TimepixHandler::simulateExposure(void) {
 
     int x, y;
     for (int i = 0; i < int(dummy_photon_flux*exposure); i++) {
-      
+
       y = int(samplePseudoNormal(128, 64));
 
       if (y < 0 || y > 255)
@@ -671,7 +679,7 @@ bool TimepixHandler::continuouExposureCallback(rospix::Exposure::Request &req, r
   exposure = req.exposure_time;
 
   current_state = CONTINOUS_EXPOSURE;
-  
+
   res.success = true;
   res.message = "Meaurement started.";
   return true;
@@ -688,7 +696,7 @@ bool TimepixHandler::batchExposureCallback(rospix::BatchExposure::Request &req, 
   }
 
   if (req.exposure_count < 1) {
-    
+
     res.success = false;
     res.message = "The exposure count should be positive.";
     return true;
@@ -711,13 +719,13 @@ bool TimepixHandler::batchExposureCallback(rospix::BatchExposure::Request &req, 
   return true;
 
 }
-    
+
 bool TimepixHandler::interruptMeasurementCallback(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res) {
 
   if (exposing) {
 
     exposing = false;
-    
+
     ros::Duration d(0.01);
     while (ros::ok && current_state != IDLE) {
 
@@ -731,6 +739,46 @@ bool TimepixHandler::interruptMeasurementCallback(std_srvs::Trigger::Request &re
     res.success = true;
     res.message = "Measurement already finished";
   }
-  
-  return false;
+
+  return true;
+}
+
+bool TimepixHandler::setThresholdCallback(rospix::SetThreshold::Request &req, rospix::SetThreshold::Response &res) {
+
+  if (req.threshold >= 0 && req.threshold <= 1000) {
+
+    threshold = req.threshold;
+    res.success = true;
+    res.message = "Threshold changed.";
+    return true;
+
+  } else {
+
+    res.success = false;
+    res.message = "Threshold is out of bounds [0, 1000]";
+    return true;
+  }
+}
+
+bool TimepixHandler::setBiasCallback(rospix::SetBias::Request &req, rospix::SetBias::Response &res) {
+
+  if (req.bias < 5 || req.bias > 94) {
+
+    res.success = false;
+    res.message = "Bias voltage out of bounds [5.4, 94] V.";
+    return false;
+  }
+
+  bias = req.bias;
+
+  if (!setNewBias(bias)) {
+
+    res.success = false;
+    res.message = "Error during setting new bias.";
+    return false;
+  }
+
+  res.success = true;
+  res.message = "New bias set.";
+  return true;
 }

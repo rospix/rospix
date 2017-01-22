@@ -9,6 +9,8 @@
 #include <rospix/Exposure.h>
 #include <rospix/BatchExposure.h>
 #include <rospix/SetMode.h>
+#include <rospix/SetThreshold.h>
+#include <rospix/SetBias.h>
 #include <std_srvs/Trigger.h>
 
 // regarding image transport
@@ -114,6 +116,8 @@ class TimepixHandler {
     ros::ServiceServer service_continuous_exposure;
     ros::ServiceServer service_batch_exposure;
     ros::ServiceServer service_set_mode;
+    ros::ServiceServer service_set_bias;
+    ros::ServiceServer service_set_threshold;
     ros::ServiceServer service_interrupt_measurement;
     image_transport::Publisher image_publisher;
 
@@ -134,6 +138,8 @@ class TimepixHandler {
     bool batchExposureCallback(rospix::BatchExposure::Request &req, rospix::BatchExposure::Response &res);
     bool setModeCallback(rospix::SetMode::Request &req, rospix::SetMode::Response &res);
     bool interruptMeasurementCallback(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
+    bool setThresholdCallback(rospix::SetThreshold::Request &req, rospix::SetThreshold::Response &res);
+    bool setBiasCallback(rospix::SetBias::Request &req, rospix::SetBias::Response &res);
 };
 
 #endif
