@@ -13,12 +13,16 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
+add_message_files(FILES
+  ImageInfo.msg
+  Status.msg
+)
+
 add_service_files(FILES
-  Exposure.srv
   BatchExposure.srv
-  SetThreshold.srv
-  SetBias.srv
-  SetMode.srv
+  Exposure.srv
+  SetInt.srv
+  SetDouble.srv
 )
 
 generate_messages(DEPENDENCIES

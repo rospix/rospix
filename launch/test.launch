@@ -6,6 +6,9 @@
     <!-- load config from config file -->
     <rosparam file="$(find rospix)/config/lite_rigaku.yaml" />
 
+    <!-- PUBLISHERS -->
+    <remap from="~status" to="~status" />
+
   </node>
 
 </launch>

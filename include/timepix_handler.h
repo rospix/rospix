@@ -8,9 +8,8 @@
 // service messages
 #include <rospix/Exposure.h>
 #include <rospix/BatchExposure.h>
-#include <rospix/SetMode.h>
-#include <rospix/SetThreshold.h>
-#include <rospix/SetBias.h>
+#include <rospix/SetInt.h>
+#include <rospix/SetDouble.h>
 #include <std_srvs/Trigger.h>
 
 // regarding image transport
@@ -109,6 +108,9 @@ class TimepixHandler {
     void simulateExposure(void);
     double randf(double from, double to);
     int randi(int from, int to);
+    int dummy_counter;
+    bool simulate_background;
+    int dummy_n_images;
 
   private:
 
@@ -116,10 +118,14 @@ class TimepixHandler {
     ros::ServiceServer service_continuous_exposure;
     ros::ServiceServer service_batch_exposure;
     ros::ServiceServer service_set_mode;
+    ros::ServiceServer service_set_exposure;
     ros::ServiceServer service_set_bias;
     ros::ServiceServer service_set_threshold;
     ros::ServiceServer service_interrupt_measurement;
+
     image_transport::Publisher image_publisher;
+
+    ros::Publisher publisher_image_info;
 
   private:
 
@@ -136,10 +142,11 @@ class TimepixHandler {
     bool singleExposureCallback(rospix::Exposure::Request &req, rospix::Exposure::Response &res);
     bool continuouExposureCallback(rospix::Exposure::Request &req, rospix::Exposure::Response &res);
     bool batchExposureCallback(rospix::BatchExposure::Request &req, rospix::BatchExposure::Response &res);
-    bool setModeCallback(rospix::SetMode::Request &req, rospix::SetMode::Response &res);
+    bool setModeCallback(rospix::SetInt::Request &req, rospix::SetInt::Response &res);
     bool interruptMeasurementCallback(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
-    bool setThresholdCallback(rospix::SetThreshold::Request &req, rospix::SetThreshold::Response &res);
-    bool setBiasCallback(rospix::SetBias::Request &req, rospix::SetBias::Response &res);
+    bool setThresholdCallback(rospix::SetInt::Request &req, rospix::SetInt::Response &res);
+    bool setBiasCallback(rospix::SetDouble::Request &req, rospix::SetDouble::Response &res);
+    bool setExposureCallback(rospix::SetDouble::Request &req, rospix::SetDouble::Response &res);
 };
 
 #endif

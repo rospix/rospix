@@ -1,4 +1,5 @@
 #include <ros/ros.h>
+#include <ros/package.h>
 
 #include "timepix_handler.h"
 #include <string>
@@ -14,6 +15,8 @@
 #include <mutex>
 
 #include <image_transport/image_transport.h>
+
+#include <rospix/ImageInfo.h>
 
 using namespace std;
 
@@ -37,6 +40,8 @@ TimepixHandler::TimepixHandler(ros::NodeHandle nh) {
 
     nh_.param("simulate_focus", dummy_simulate_focus, false);
     nh_.param("photon_flux", dummy_photon_flux, 100);
+    nh_.param("simulate_background", simulate_background, false);
+    nh_.param("n_images", dummy_n_images, 0);
 
   } else {
 
@@ -144,8 +149,6 @@ void TimepixHandler::mainThread(void) {
 
       case SINGLE_EXPOSURE:
 
-        ROS_INFO("THREAD: started single exposure job");
-
         doSingleExposure();
 
         changeState(IDLE);
@@ -153,8 +156,6 @@ void TimepixHandler::mainThread(void) {
         break;
 
       case CONTINOUS_EXPOSURE:
-
-        ROS_INFO("THREAD: started continuous exposure job");
 
         exposing = true;
 
@@ -168,8 +169,6 @@ void TimepixHandler::mainThread(void) {
         break;
 
       case BATCH_EXPOSURE:
-
-        ROS_INFO("THREAD: started exposure batch job");
 
         exposing = true;
 
@@ -187,50 +186,43 @@ void TimepixHandler::mainThread(void) {
 
 bool TimepixHandler::open(void) {
 
-  int error = 0;
+  if (dummy) {
 
-  // list the devices, this is neccessary to open them
-  const char* devNames[50];
-  int devCount = 0;
-  listDevices(devNames, &devCount);
-
-  // try to open usb lite interface
-  error = openDevice(name_.c_str(), &id);
-
-  // success?
-  if (error == 0) {
-
-    chip_id = chipID(id);
-
-    ROS_INFO("Successfully opened USB Lite \"%s\", its chip is is \"%s\".", name_.c_str(), chip_id.c_str());
-
-    interface = USB_LITE;  
     opened = true;
 
+    ROS_INFO("Successfully opened device \"%s\".", name_.c_str());
   } else {
 
-    // try to open fitpix device
-    listDevicesFpx(devNames, &devCount);
+    int error = 0;
 
-    error = openDeviceFpx(name_.c_str(), &id);
+    // try to open usb lite interface
+    error = openDevice(name_.c_str(), &id);
 
     // success?
     if (error == 0) {
 
       chip_id = chipID(id);
 
-      ROS_INFO("Successfully opened FitPix \"%s\", its chip is is \"%s\".", name_.c_str(), chip_id.c_str());
+      ROS_INFO("Successfully opened USB Lite \"%s\", its chip is is \"%s\".", name_.c_str(), chip_id.c_str());
 
-      interface = FITPIX;
+      interface = USB_LITE;  
       opened = true;
+
+    } else {
+
+      error = openDeviceFpx(name_.c_str(), &id);
+
+      // success?
+      if (error == 0) {
+
+        chip_id = chipID(id);
+
+        ROS_INFO("Successfully opened FitPix \"%s\", its chip is is \"%s\".", name_.c_str(), chip_id.c_str());
+
+        interface = FITPIX;
+        opened = true;
+      }
     }
-  }
-
-  if (dummy) {
-
-    opened = true;
-
-    ROS_INFO("Successfully opened device \"%s\".", name_.c_str());
   }
 
   if (opened) {
@@ -242,7 +234,9 @@ bool TimepixHandler::open(void) {
     service_set_mode = nh_.advertiseService("set_mode", &TimepixHandler::setModeCallback, this);
     service_set_bias = nh_.advertiseService("set_bias", &TimepixHandler::setBiasCallback, this);
     service_set_threshold = nh_.advertiseService("set_threshold", &TimepixHandler::setThresholdCallback, this);
+    service_set_exposure = nh_.advertiseService("set_exposure_time", &TimepixHandler::setExposureCallback, this);
     service_interrupt_measurement = nh_.advertiseService("interrupt_measurement", &TimepixHandler::interruptMeasurementCallback, this);
+    publisher_image_info = nh_.advertise<rospix::ImageInfo>("image_info", 1);
 
     // create publishers
     image_transport::ImageTransport it(nh_);
@@ -539,15 +533,50 @@ void TimepixHandler::simulateExposure(void) {
 
       x = floor(randi(0, 256));
 
-      image[y*256 + x] = randi(1, 11);
+      image[y*256 + x] += randi(1, 250);
     }
 
   } else {
 
     for (int i = 0; i < int(dummy_photon_flux*exposure); i++) {
 
-      image[randi(0, 65536)] = randi(1, 11);
+      image[randi(0, 65536)] += randi(1, 250);
     } 
+  }
+
+  // simulate background
+  if (simulate_background) {
+
+    // load nth dummy image
+    char temp[30];
+    sprintf(temp, "/dummy/%d.txt", dummy_counter);
+
+    if (++dummy_counter > (dummy_n_images-1)) {
+      dummy_counter = 0;
+    }
+
+    string path = ros::package::getPath("rospix")+string(temp);
+
+    FILE * f = fopen(path.c_str(), "r");
+
+    int tempint;
+
+    if (f != NULL) {
+
+      for (int i = 0; i < 256; i++) {
+
+        for (int j = 0; j < 256; j++) {
+
+          fscanf(f, "%d ", &tempint);
+          image[j + i*256] += tempint;
+        }
+
+        fscanf(f, "\n");
+      }
+      fclose(f);
+    } else {
+      ROS_WARN("Cannot open file with dummy radiation background");
+    }
   }
 }
 
@@ -590,13 +619,23 @@ bool TimepixHandler::publishImage(void) {
   for (int i = 0; i < 256; i++) {
     for (int j = 0; j < 256; j++) {
 
-      cv_image.at<uint16_t>(i, j) = image[j*256 + i] > 0 ? 65535 : 0; 
+      cv_image.at<uint16_t>(i, j) = image[j*256 + i]; 
     }
   }
 
   sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", cv_image).toImageMsg();
 
   image_publisher.publish(msg);
+
+  rospix::ImageInfo info;
+
+  info.stamp = ros::Time::now();
+  info.interface = name_;
+  info.threshold = threshold;
+  info.bias = bias;
+  info.exposure_time = exposure;
+
+  publisher_image_info.publish(info);
 }
 
 bool TimepixHandler::setMode(int newmode) {
@@ -627,13 +666,13 @@ bool TimepixHandler::setMode(int newmode) {
   }
 }
 
-bool TimepixHandler::setModeCallback(rospix::SetMode::Request &req, rospix::SetMode::Response &res) {
+bool TimepixHandler::setModeCallback(rospix::SetInt::Request &req, rospix::SetInt::Response &res) {
 
   if (opened) {
 
     if (current_state != IDLE) {
 
-      if (!setMode(req.mode)) {
+      if (!setMode(req.value)) {
 
         res.message = "Error while setting mode.";
         res.success = false;
@@ -743,11 +782,11 @@ bool TimepixHandler::interruptMeasurementCallback(std_srvs::Trigger::Request &re
   return true;
 }
 
-bool TimepixHandler::setThresholdCallback(rospix::SetThreshold::Request &req, rospix::SetThreshold::Response &res) {
+bool TimepixHandler::setThresholdCallback(rospix::SetInt::Request &req, rospix::SetInt::Response &res) {
 
-  if (req.threshold >= 0 && req.threshold <= 1000) {
+  if (req.value >= 0 && req.value <= 1000) {
 
-    threshold = req.threshold;
+    threshold = req.value;
     res.success = true;
     res.message = "Threshold changed.";
     return true;
@@ -760,16 +799,16 @@ bool TimepixHandler::setThresholdCallback(rospix::SetThreshold::Request &req, ro
   }
 }
 
-bool TimepixHandler::setBiasCallback(rospix::SetBias::Request &req, rospix::SetBias::Response &res) {
+bool TimepixHandler::setBiasCallback(rospix::SetDouble::Request &req, rospix::SetDouble::Response &res) {
 
-  if (req.bias < 5 || req.bias > 94) {
+  if (req.value < 5 || req.value > 94) {
 
     res.success = false;
     res.message = "Bias voltage out of bounds [5.4, 94] V.";
     return false;
   }
 
-  bias = req.bias;
+  bias = req.value;
 
   if (!setNewBias(bias)) {
 
@@ -780,5 +819,21 @@ bool TimepixHandler::setBiasCallback(rospix::SetBias::Request &req, rospix::SetB
 
   res.success = true;
   res.message = "New bias set.";
+  return true;
+}
+
+bool TimepixHandler::setExposureCallback(rospix::SetDouble::Request &req, rospix::SetDouble::Response &res) {
+
+  if (req.value <= 0) {
+
+    res.success = false;
+    res.message = "Exposure time should be positive.";
+    return false;
+  }
+
+  exposure = req.value;
+
+  res.success = true;
+  res.message = "New exposure time set.";
   return true;
 }
