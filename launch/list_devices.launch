@@ -1,0 +1,8 @@
+<launch>
+
+  <!-- launch the node -->
+  <node name="list_devices" pkg="rospix" type="list_devices" output="screen">
+
+  </node>
+
+</launch>

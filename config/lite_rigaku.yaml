@@ -8,7 +8,7 @@ Sensor_0:
 
   # this is how it will be named in ros
   custom_name: 'lite'
-  equalization: '/home/klaxalk/equalisation.bpc'
+  equalization: '/home/odroid/equalisation.bpc'
   
   defaults:
     threshold: 340
@@ -23,9 +23,18 @@ Sensor_1:
 
   name: 'dummy'
 
+  # should we simulate optics?
   simulate_focus: true
+
+  # optics dimensionality 1=1D, 2=2D
+  optics_dimension: 2
+
   photon_flux: 100       # [photons/s], whole number
+
+  # should we simulation radiation background?
   simulate_background: true
+
+  # how many images of radiation background do we have?
   n_images: 20
 
   defaults:

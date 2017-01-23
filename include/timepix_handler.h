@@ -111,6 +111,7 @@ class TimepixHandler {
     int dummy_counter;
     bool simulate_background;
     int dummy_n_images;
+    int optics_dimension;
 
   private:
 

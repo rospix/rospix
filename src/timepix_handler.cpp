@@ -42,6 +42,7 @@ TimepixHandler::TimepixHandler(ros::NodeHandle nh) {
     nh_.param("photon_flux", dummy_photon_flux, 100);
     nh_.param("simulate_background", simulate_background, false);
     nh_.param("n_images", dummy_n_images, 0);
+    nh_.param("optics_dimension", optics_dimension, 1);
 
   } else {
 
@@ -191,9 +192,15 @@ bool TimepixHandler::open(void) {
     opened = true;
 
     ROS_INFO("Successfully opened device \"%s\".", name_.c_str());
+
   } else {
 
     int error = 0;
+
+    // list the devices, this is neccessary to open them
+    const char* devNames[50];
+    int devCount = 0;
+    listDevices(devNames, &devCount);
 
     // try to open usb lite interface
     error = openDevice(name_.c_str(), &id);
@@ -385,9 +392,11 @@ bool TimepixHandler::loadEqualization(const string filename) {
   if (dummy)
     return true;
 
-  FILE *F;
-  F=fopen(filename.c_str(), "rb");
-  if (!F){
+  FILE * F;
+  F = fopen(filename.c_str(), "rb");
+
+  if (F == NULL) {
+
     ROS_ERROR("Cannot read the equalization!");
     return false;
   }
@@ -531,7 +540,16 @@ void TimepixHandler::simulateExposure(void) {
       if (y < 0 || y > 255)
         continue;
 
-      x = floor(randi(0, 256));
+      if (optics_dimension == 1)
+        x = floor(randi(0, 256));
+      else {
+
+        x = int(samplePseudoNormal(128, 64));
+
+        if (x < 0 || y > 255)
+          continue;
+        
+      }
 
       image[y*256 + x] += randi(1, 250);
     }
