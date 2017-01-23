@@ -11,6 +11,7 @@
 #include <rospix/SetInt.h>
 #include <rospix/SetDouble.h>
 #include <std_srvs/Trigger.h>
+#include <rospix/Image.h>
 
 // regarding image transport
 #include <image_transport/image_transport.h>
@@ -98,6 +99,7 @@ class TimepixHandler {
     bool setEqualization(void);
     bool setMode(int newmode);
     void doSingleExposure(void);
+    bool compareStrings(const char * a, const char * b);
 
   private:
     
@@ -124,9 +126,7 @@ class TimepixHandler {
     ros::ServiceServer service_set_threshold;
     ros::ServiceServer service_interrupt_measurement;
 
-    image_transport::Publisher image_publisher;
-
-    ros::Publisher publisher_image_info;
+    ros::Publisher image_publisher;
 
   private:
 

@@ -14,10 +14,6 @@
 #include <thread>
 #include <mutex>
 
-#include <image_transport/image_transport.h>
-
-#include <rospix/ImageInfo.h>
-
 using namespace std;
 
 // the constructor
@@ -185,7 +181,24 @@ void TimepixHandler::mainThread(void) {
   }
 }
 
+bool TimepixHandler::compareStrings(const char * a, const char * b) {
+
+  for (int i = 0; i < 50; i++) {
+
+    if (a[i] != b[i]) {
+      return false;
+    }
+
+    if (a[i] == '\0' && b[i] == '\0') {
+      return true;
+    }
+  }
+}
+
 bool TimepixHandler::open(void) {
+
+  const char * devNames[50];
+  int devCount = 0;
 
   if (dummy) {
 
@@ -195,15 +208,17 @@ bool TimepixHandler::open(void) {
 
   } else {
 
-    int error = 0;
+    int error = 1;
 
-    // list the devices, this is neccessary to open them
-    const char* devNames[50];
-    int devCount = 0;
     listDevices(devNames, &devCount);
 
-    // try to open usb lite interface
-    error = openDevice(name_.c_str(), &id);
+    // find the device
+    for (int i = 0; i < devCount; i++) {
+      if (compareStrings(devNames[i], name_.c_str())) {
+        error = openDevice(name_.c_str(), &id);
+        break;
+      }
+    }
 
     // success?
     if (error == 0) {
@@ -217,7 +232,16 @@ bool TimepixHandler::open(void) {
 
     } else {
 
-      error = openDeviceFpx(name_.c_str(), &id);
+      error = 1;
+
+      listDevicesFpx(devNames, &devCount);
+      // find the device
+      for (int i = 0; i < devCount; i++) {
+        if (compareStrings(devNames[i], name_.c_str())) {
+          error = openDeviceFpx(name_.c_str(), &id);
+          break;
+        }
+      }
 
       // success?
       if (error == 0) {
@@ -243,11 +267,9 @@ bool TimepixHandler::open(void) {
     service_set_threshold = nh_.advertiseService("set_threshold", &TimepixHandler::setThresholdCallback, this);
     service_set_exposure = nh_.advertiseService("set_exposure_time", &TimepixHandler::setExposureCallback, this);
     service_interrupt_measurement = nh_.advertiseService("interrupt_measurement", &TimepixHandler::interruptMeasurementCallback, this);
-    publisher_image_info = nh_.advertise<rospix::ImageInfo>("image_info", 1);
 
     // create publishers
-    image_transport::ImageTransport it(nh_);
-    image_publisher = it.advertise("image", 1);
+    image_publisher = nh_.advertise<rospix::Image>("image", 1);
 
     if (!loadDacs()) {
       ROS_ERROR("Error while loading DACs after openning the device.");
@@ -397,7 +419,7 @@ bool TimepixHandler::loadEqualization(const string filename) {
 
   if (F == NULL) {
 
-    ROS_ERROR("Cannot read the equalization!");
+    ROS_ERROR("Cannot read the equalization from %s!", filename.c_str());
     return false;
   }
 
@@ -548,7 +570,7 @@ void TimepixHandler::simulateExposure(void) {
 
         if (x < 0 || y > 255)
           continue;
-        
+
       }
 
       image[y*256 + x] += randi(1, 250);
@@ -632,28 +654,19 @@ bool TimepixHandler::readImage(void) {
 
 bool TimepixHandler::publishImage(void) {
 
-  cv::Mat cv_image = cv::Mat::zeros(256, 256, CV_16UC1);
+  rospix::Image newImage;
 
-  for (int i = 0; i < 256; i++) {
-    for (int j = 0; j < 256; j++) {
+  newImage.stamp = ros::Time::now();
+  newImage.interface = name_;
+  newImage.threshold = threshold;
+  newImage.bias = bias;
+  newImage.exposure_time = exposure;
 
-      cv_image.at<uint16_t>(i, j) = image[j*256 + i]; 
-    }
+  for (int i = 0; i < 65536; i++) {
+    newImage.image[i] = image[i];
   }
 
-  sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", cv_image).toImageMsg();
-
-  image_publisher.publish(msg);
-
-  rospix::ImageInfo info;
-
-  info.stamp = ros::Time::now();
-  info.interface = name_;
-  info.threshold = threshold;
-  info.bias = bias;
-  info.exposure_time = exposure;
-
-  publisher_image_info.publish(info);
+  image_publisher.publish(newImage);
 }
 
 bool TimepixHandler::setMode(int newmode) {

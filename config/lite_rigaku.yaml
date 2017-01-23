@@ -1,14 +1,14 @@
 number_of_detectors: 2
 
 # indexing from 0, 0..number_of_detectors
-Sensor_0:
+sensor_0:
 
   # by this name the device is found, run "rosrun rospix list_devices to see it"
   name: 'Medipix2 ver 1.32 sn: 1096'
 
   # this is how it will be named in ros
   custom_name: 'lite'
-  equalization: '/home/odroid/equalisation.bpc'
+  equalization: '/home/odroid/git/rocket-timepix/equalizations/lite_rigaku.bpc'
   
   defaults:
     threshold: 340
@@ -19,7 +19,7 @@ Sensor_0:
     # dacs can be found in calibration protocol (or equalization protocol)
     dacs: [1,100,255,127,127,0,350,7,130,128,80,85,128,128]
 
-Sensor_1:
+sensor_1:
 
   name: 'dummy'
 
