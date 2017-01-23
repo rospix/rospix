@@ -7,27 +7,13 @@
 #include <stdio.h>
 
 // some opencv includes
-#include <image_transport/image_transport.h>
-#include <opencv2/opencv.hpp>
-#include <opencv2/core/core.hpp>
-#include <cv_bridge/cv_bridge.h>
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/highgui/highgui.hpp"
+#include <ros/package.h>
 
 #include <timepix_handler.h>
 
 #include <rospix/Status.h>
 
 #include <usb.h>
-
-using namespace std;
-using namespace cv;
-
-// global variable for storing the image
-Mat frame_global;
-
-// pointer to OpenCV bridge
-cv_bridge::CvImage cv_ptr;;
 
 list<TimepixHandler *> sensors;
 
@@ -39,8 +25,10 @@ int main(int argc, char** argv) {
   ros::Publisher status = nh_.advertise<rospix::Status>("status", 1);
 
   int number_of_detectors;
+  string equalization_directory;
 
   nh_.param("number_of_detectors", number_of_detectors, 0);
+  nh_.param("equalization_directory", equalization_directory, ros::package::getPath("rospix")+string("/equalizations"));
 
   // list the devices, this is neccessary to open them
   // const char* devNames[50];
@@ -54,7 +42,7 @@ int main(int argc, char** argv) {
     sprintf(id_char, "sensor_%d", i);
     string id_str = string(id_char);
 
-    TimepixHandler * sensor = new TimepixHandler(ros::NodeHandle(string("~/")+id_str));
+    TimepixHandler * sensor = new TimepixHandler(ros::NodeHandle(string("~/")+id_str), equalization_directory);
 
     if (!sensor->open()) {
       ROS_WARN("Failed to open \"%s\"", id_str.c_str());

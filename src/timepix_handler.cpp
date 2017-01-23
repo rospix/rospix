@@ -17,12 +17,15 @@
 using namespace std;
 
 // the constructor
-TimepixHandler::TimepixHandler(ros::NodeHandle nh) {
+TimepixHandler::TimepixHandler(ros::NodeHandle nh, string equalization_directory) {
+
+  this->equalization_directory = equalization_directory;
 
   opened = false;
   equalization_loaded = false;
   exposing = false;
   dummy = false;
+
   memset(equalization, 0, MATRIX_SIZE * sizeof(uint8_t));
 
   this->nh_ = nh;
@@ -61,6 +64,7 @@ TimepixHandler::TimepixHandler(ros::NodeHandle nh) {
     nh_.param("equalization", equalization_file, string());
 
     if (equalization_file.empty()) {
+
       ROS_ERROR("Error loading the name of the equalization file from the config file.");
     }
 
@@ -94,8 +98,6 @@ TimepixHandler::TimepixHandler(ros::NodeHandle nh) {
 
 void TimepixHandler::changeState(State_t new_state) {
 
-  current_state = new_state;
-
   switch (new_state) {
 
     case IDLE:
@@ -103,7 +105,25 @@ void TimepixHandler::changeState(State_t new_state) {
       exposing = false;
 
       break;
+
+    default:
+
+      if (!opened) {
+
+        ROS_ERROR_THROTTLE(1, "Cannot execute measurement, device not opened.");
+
+        ROS_INFO("Trying to reopen the device \"%s\"", name_.c_str());
+        
+        if (!reOpen()) {
+          
+          return;
+        }
+      }
+
+      break;
   }
+  
+  current_state = new_state;
 }
 
 void TimepixHandler::doSingleExposure(void) {
@@ -115,13 +135,13 @@ void TimepixHandler::doSingleExposure(void) {
 
   if (!doExposure(exposure)) {
 
-    ROS_ERROR("Error while doing single exposure.");
+    ROS_ERROR("Error while doing single exposure, \"%s\".", name_.c_str());
 
   } else {
 
     if (!readImage()) {
 
-      ROS_ERROR("Could not read the image.");
+      ROS_ERROR("Could not read the image from \"%s\".", name_.c_str());
 
     } else {
 
@@ -156,7 +176,7 @@ void TimepixHandler::mainThread(void) {
 
         exposing = true;
 
-        while (ros::ok && exposing) {
+        while (ros::ok && exposing && opened) {
 
           doSingleExposure();
         }
@@ -170,6 +190,10 @@ void TimepixHandler::mainThread(void) {
         exposing = true;
 
         for (int i = 0; i < batch_exposure_count; i++) {
+
+          if (!opened) {
+            break;            
+          }
 
           doSingleExposure();
         }
@@ -279,7 +303,7 @@ bool TimepixHandler::open(void) {
       ROS_ERROR("Error while setting bias after openning the device.");
     }
 
-    if (!loadEqualization(equalization_file)) {
+    if (!loadEqualization()) {
 
       ROS_ERROR("Failed to load the equalization matrix.");  
       return false; 
@@ -308,6 +332,73 @@ bool TimepixHandler::open(void) {
   return opened;
 }
 
+bool TimepixHandler::reOpen(void) {
+
+  if (dummy)
+    return true;
+
+  const char * devNames[50];
+  int devCount = 0;
+
+  int error = 1;
+
+  if (interface == USB_LITE) {
+
+    listDevices(devNames, &devCount);
+
+    // find the device
+    for (int i = 0; i < devCount; i++) {
+      if (compareStrings(devNames[i], name_.c_str())) {
+        error = openDevice(name_.c_str(), &id);
+        break;
+      }
+    }
+
+    // success?
+    if (error == 0) {
+
+      if (!loadEqualization() || !setNewBias(bias)) {
+      
+        return false;
+      }
+
+      ROS_INFO("Successfully reopened USB Lite \"%s\".", name_.c_str());
+
+      opened = true;
+    }
+  } else if (interface == FITPIX) {
+
+    listDevicesFpx(devNames, &devCount);
+    // find the device
+    for (int i = 0; i < devCount; i++) {
+      if (compareStrings(devNames[i], name_.c_str())) {
+        error = openDeviceFpx(name_.c_str(), &id);
+        break;
+      }
+    }
+
+    // success?
+    if (error == 0) {
+
+      if (!loadEqualization() || !setNewBias(bias)) {
+      
+        return false;
+      }
+
+      ROS_INFO("Successfully reopened FitPix \"%s\".", name_.c_str());
+
+      opened = true;
+    }
+  }
+
+  if (!opened) {
+
+    ROS_ERROR("Reopenning of FitPix \"%s\" failed.", name_.c_str());
+  }
+
+  return opened;
+}
+
 bool TimepixHandler::singleExposureCallback(rospix::Exposure::Request &req, rospix::Exposure::Response &res) {
 
   if (req.exposure_time <= 0) {
@@ -326,7 +417,7 @@ bool TimepixHandler::singleExposureCallback(rospix::Exposure::Request &req, rosp
 
   exposure = req.exposure_time;
 
-  current_state = SINGLE_EXPOSURE;
+  changeState(SINGLE_EXPOSURE);
 
   ros::Duration d(0.001);
   while (ros::ok && current_state != IDLE) {
@@ -366,6 +457,7 @@ bool TimepixHandler::loadDacs(void) {
     return true;
   } else {
 
+    opened = false;
     return false;
   }
 }
@@ -409,17 +501,19 @@ bool TimepixHandler::setNewBias(const double newBias) {
   }
 }
 
-bool TimepixHandler::loadEqualization(const string filename) {
+bool TimepixHandler::loadEqualization(void) {
 
   if (dummy)
     return true;
 
+  string path = equalization_directory + equalization_file;
+
   FILE * F;
-  F = fopen(filename.c_str(), "rb");
+  F = fopen(path.c_str(), "rb");
 
   if (F == NULL) {
 
-    ROS_ERROR("Cannot read the equalization from %s!", filename.c_str());
+    ROS_ERROR("Cannot read the equalization from %s!", path.c_str());
     return false;
   }
 
@@ -478,6 +572,7 @@ bool TimepixHandler::setEqualization(void) {
   if (rc == 0) {
     return true;
   } else {
+    opened = false;
     return false;
   }
 }
@@ -512,6 +607,7 @@ bool TimepixHandler::doExposure(double time) {
   if (rc == 0) {
     return true;
   } else {
+    opened = false;
     return false;
   }
 }
@@ -648,6 +744,7 @@ bool TimepixHandler::readImage(void) {
   if (rc == 0) {
     return true;
   } else {
+    opened = false;
     return false;
   }
 }
@@ -748,12 +845,11 @@ bool TimepixHandler::continuouExposureCallback(rospix::Exposure::Request &req, r
 
   exposure = req.exposure_time;
 
-  current_state = CONTINOUS_EXPOSURE;
+  changeState(CONTINOUS_EXPOSURE);
 
   res.success = true;
   res.message = "Meaurement started.";
   return true;
-
 }
 
 bool TimepixHandler::batchExposureCallback(rospix::BatchExposure::Request &req, rospix::BatchExposure::Response &res) {
@@ -782,12 +878,11 @@ bool TimepixHandler::batchExposureCallback(rospix::BatchExposure::Request &req, 
   exposure = req.exposure_time;
   batch_exposure_count = req.exposure_count;
 
-  current_state = BATCH_EXPOSURE;
+  changeState(BATCH_EXPOSURE);
 
   res.success = true;
   res.message = "Meaurement started.";
   return true;
-
 }
 
 bool TimepixHandler::interruptMeasurementCallback(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res) {
@@ -836,7 +931,7 @@ bool TimepixHandler::setBiasCallback(rospix::SetDouble::Request &req, rospix::Se
 
     res.success = false;
     res.message = "Bias voltage out of bounds [5.4, 94] V.";
-    return false;
+    return true;
   }
 
   bias = req.value;
@@ -845,7 +940,7 @@ bool TimepixHandler::setBiasCallback(rospix::SetDouble::Request &req, rospix::Se
 
     res.success = false;
     res.message = "Error during setting new bias.";
-    return false;
+    return true;
   }
 
   res.success = true;
@@ -859,7 +954,7 @@ bool TimepixHandler::setExposureCallback(rospix::SetDouble::Request &req, rospix
 
     res.success = false;
     res.message = "Exposure time should be positive.";
-    return false;
+    return true;
   }
 
   exposure = req.value;

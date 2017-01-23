@@ -13,11 +13,6 @@
 #include <std_srvs/Trigger.h>
 #include <rospix/Image.h>
 
-// regarding image transport
-#include <image_transport/image_transport.h>
-#include <opencv2/highgui/highgui.hpp>
-#include <cv_bridge/cv_bridge.h>
-
 #include <thread>
 
 using namespace std;
@@ -50,7 +45,7 @@ class TimepixHandler {
   public:
 
     // the constructor
-    TimepixHandler(ros::NodeHandle nh);    
+    TimepixHandler(ros::NodeHandle nh, string equalization_directory);    
 
     // open the device
     bool open(void);
@@ -62,7 +57,6 @@ class TimepixHandler {
 
     // the string identifier of the sensor
     string name_;
-    string custom_name_;
 
     // whether the device is openned
     bool opened;
@@ -73,6 +67,7 @@ class TimepixHandler {
 
     // node handle
     ros::NodeHandle nh_;
+    string equalization_directory;
 
     uint16_t dacs[14];
     uint16_t threshold;  
@@ -92,7 +87,7 @@ class TimepixHandler {
     bool loadDacs(void); 
     bool setThreshold(const uint16_t newThreshold);
     bool setNewBias(const double newBias);
-    bool loadEqualization(const string filename);
+    bool loadEqualization(void);
     bool doExposure(double time);
     bool readImage(void);
     bool publishImage(void);
@@ -100,6 +95,7 @@ class TimepixHandler {
     bool setMode(int newmode);
     void doSingleExposure(void);
     bool compareStrings(const char * a, const char * b);
+    bool reOpen(void);
 
   private:
     

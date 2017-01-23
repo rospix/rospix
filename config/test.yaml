@@ -4,10 +4,10 @@ number_of_detectors: 2
 sensor_0:
 
   # by this name the device is found, run "rosrun rospix list_devices to see it"
-  name: 'detector_name'
+  name: 'Medipix2 ver 1.32 sn: 1096'
 
   # location of the equalization file
-  equalization: 'path_to_equalization_file' # *.bpc is needed
+  equalization: 'lite_rigaku.bpc' # *.bpc is needed
   
   defaults:
     threshold: 340

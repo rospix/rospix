@@ -6,6 +6,9 @@
     <!-- load config from config file -->
     <rosparam file="$(find rospix)/config/test.yaml" />
 
+    <!-- specify where should the node look for equalization matrices -->
+    <param name="equalization_directory" value="$(find rospix)/equalizations/" />
+
     <!-- PUBLISHERS -->
     <remap from="~status" to="~status" />
 
