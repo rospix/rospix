@@ -4,7 +4,7 @@
   <node name="rospix" pkg="rospix" type="rospix" output="screen">
 
     <!-- load config from config file -->
-    <rosparam file="$(find rospix)/config/lite_rigaku.yaml" />
+    <rosparam file="$(find rospix)/config/test.yaml" />
 
     <!-- PUBLISHERS -->
     <remap from="~status" to="~status" />
