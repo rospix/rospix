@@ -31,10 +31,7 @@ generate_messages(DEPENDENCIES
 )
 
 catkin_package(
-#   INCLUDE_DIRS include
-#  LIBRARIES charging
   CATKIN_DEPENDS message_runtime # image_transport roscpp rospy std_msgs
-#  DEPENDS system_lib
 )
 
 set(CMAKE_CXX_FLAGS "-std=c++11")

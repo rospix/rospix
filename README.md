@@ -1,7 +1,29 @@
 # ROSPix
 ROS package for working with Timepix sensor.
 
-# FTDI drivers
+# Dummy detectors
+
+The node allows creating ("connecting") dummy detectors. Any number of dummy detectors
+can be connected, even while real detectors are present. Here is an example of **config file**
+record for an dummy detector:
+```
+sensor_1:
+
+  name: 'dummy'
+
+  simulate_focus: true        # should we simulate optics?
+  optics_dimension: 2         # optics dimensionality 1=1D, 2=2D
+  photon_flux: 100            # [photons/s], whole number
+  simulate_background: true   # should we simulation radiation background?
+  n_images: 20                # how many images of radiation background do we have?
+
+  defaults:
+    exposure: 1.0             # [seconds]
+```
+
+# Prerequsities
+
+## FTDI drivers
 
 Get the drivers:
 
@@ -9,14 +31,16 @@ Get the drivers:
 sudo apt-get install libftdi-*
 ```
 
-Create file 99-ftdi-sio.rules with following line
+Create file **99-ftdi-sio.rules** with following line
 ```bash
 ACTION=="add", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", MODE="0666",  RUN+="/bin/sh -c '/sbin/rmmod ftdi_sio && /sbin/rmmod usbserial'"
 ACTION=="add", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", MODE="0666",  RUN+="/bin/sh -c '/sbin/rmmod ftdi_sio && /sbin/rmmod usbserial'"
 ```
 and place it in /etc/udev/rules.d/
 
-# Installing ROS
+## Installing ROS
+
+Follow tutorials on http://wiki.ros.org/kinetic/Installation/Ubuntu ... the cores is extracted in following commands:
 
 ```bash
 sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
