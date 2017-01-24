@@ -1,5 +1,5 @@
 # ROSPix
-ROS package for working with Timepix sensor.
+ROS package for working with Timepix detectors.
 
 # Dummy detectors
 
@@ -20,7 +20,7 @@ sensor_1:
   defaults:
     exposure: 1.0             # [seconds]
 ```
-Images for creating artifitial radiation background are located in the **dummy** subfolder. If anyone should provide their own additional images, copy them there and adjust **n_images** accordingly.
+Images for creating artificial radiation background are located in the **dummy** subfolder. If anyone should provide their own additional images, copy them there and adjust **n_images** accordingly.
 
 # Prerequsities
 
@@ -32,7 +32,7 @@ Get the drivers:
 sudo apt-get install libftdi-*
 ```
 
-Create file **99-ftdi-sio.rules** with following line
+Create file **99-ftdi-sio.rules** with following lines
 ```bash
 ACTION=="add", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", MODE="0666",  RUN+="/bin/sh -c '/sbin/rmmod ftdi_sio && /sbin/rmmod usbserial'"
 ACTION=="add", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", MODE="0666",  RUN+="/bin/sh -c '/sbin/rmmod ftdi_sio && /sbin/rmmod usbserial'"
@@ -41,7 +41,7 @@ and place it in /etc/udev/rules.d/
 
 ## Installing ROS
 
-Follow tutorials on http://wiki.ros.org/kinetic/Installation/Ubuntu ... the cores is extracted in following commands:
+Follow tutorials on http://wiki.ros.org/kinetic/Installation/Ubuntu ... the core is extracted in following commands:
 
 ```bash
 sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
