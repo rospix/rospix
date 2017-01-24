@@ -1,24 +1,29 @@
-number_of_detectors: 2
+# dont forget to update this number according to following contents
+number_of_detectors: 1
 
-# indexing from 0, 0..number_of_detectors
-sensor_0:
+#------------------------------------------------------------------------------------------
 
-  # by this name the device is found, run "rosrun rospix list_devices to see it"
+sensor_0: # the names are fixed, just the number change
+
+  # by this name the device is found, run "roslaunch rospix list_devices" to find it
   name: 'Medipix2 ver 1.32 sn: 1096'
 
   # location of the equalization file
+  # location is relative to a directory specified in launch file
   equalization: 'lite_rigaku.bpc' # *.bpc is needed
   
   defaults:
-    threshold: 340
-    bias: 10.0  # [Volt]
-    exposure: 1.0 # [second]
-    mode: 1 # [0 = MPX, 1 = TOT]
+    threshold: 340    # [-]
+    bias: 10.0        # [Volt]
+    exposure: 1.0     # [second]
+    mode: 1           # [0 = MPX, 1 = TOT]
 
     # dacs can be found in calibration protocol (or equalization protocol)
-    dacs: [1,100,255,127,127,0,350,7,130,128,80,85,128,128]
+    dacs: [1,100,255,127,127,0,340,7,130,128,80,85,128,128]
 
-sensor_1:
+#------------------------------------------------------------------------------------------
+
+sensor_1: # the names are fixed, just the number change
 
   name: 'dummy'
 

@@ -1,7 +1,73 @@
 # ROSPix
-ROS package for working with Timepix detectors.
 
-# Dummy detectors
+ROS package for working with Timepix detectors.
+Allows to conduct measurement with multiple sensors.
+To be able to use it, install Linux OS compatible with ROS (Indigo or newer).
+Install **ROS** and FTDI drivers, see section **Prerequisities**.
+
+## Connecting to Timepix interface
+
+Firstly, find a unique ID of your Timepix interface. Connect it to your computer and run:
+```bash
+roslaunch rospix list_device
+```
+A list of device names will appear.
+Copy the insides of double commas, corresponding to your interface.
+Is supposed to look similar to: **Medipix2 ver 1.32 sn: 1096**.
+Create a config yaml (or modify the example in **config/**) file with following contents:
+
+```
+# dont forget to update this number according to following contents
+number_of_detectors: 1
+
+sensor_0: # the names are fixed, just the number change
+
+  # by this name the device is found, run "roslaunch rospix list_devices" to find it
+  name: 'Medipix2 ver 1.32 sn: 1096'
+
+  # location of the equalization file
+  # location is relative to a directory specified in launch file
+  equalization: 'lite_rigaku.bpc' # *.bpc is needed
+  
+  defaults:
+    threshold: 340    # [-]
+    bias: 10.0        # [Volt]
+    exposure: 1.0     # [second]
+    mode: 1           # [0 = MPX, 1 = TOT]
+
+    # dacs can be found in calibration protocol (or equalization protocol)
+    dacs: [1,100,255,127,127,0,340,7,130,128,80,85,128,128]
+```
+
+Secondly, place a pixel calibration matrix (equalization matrix) into **equalizations/** folder.
+
+Lastly launch the node using launch file example **test.launch** in **launch/**.
+It loads the example config file and sets the equalization diretory.
+```bash
+roslaunch rospix test.launch
+```
+
+```
+<launch>
+
+  <!-- launch the node -->
+  <node name="rospix" pkg="rospix" type="rospix" output="screen">
+
+    <!-- load config from config file -->
+    <rosparam file="$(find rospix)/config/test.yaml" />
+
+    <!-- specify where should the node look for equalization matrices -->
+    <param name="equalization_directory" value="$(find rospix)/equalizations/" />
+
+    <!-- PUBLISHERS -->
+    <remap from="~status" to="~status" />
+
+  </node>
+
+</launch>
+```
+
+## Dummy detectors
 
 The node allows creating ("connecting") dummy detectors. Any number of dummy detectors
 can be connected, even while real detectors are present. Here is an example of **config file**
