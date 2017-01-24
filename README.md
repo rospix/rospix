@@ -20,6 +20,7 @@ sensor_1:
   defaults:
     exposure: 1.0             # [seconds]
 ```
+Images for creating artifitial radiation background are located in the **dummy** subfolder. If anyone should provide their own additional images, copy them there and adjust **n_images** accordingly.
 
 # Prerequsities
 
