@@ -45,7 +45,7 @@ class TimepixHandler {
   public:
 
     // the constructor
-    TimepixHandler(ros::NodeHandle nh, string equalization_directory);    
+    TimepixHandler(ros::NodeHandle nh, string idname, string equalization_directory);    
 
     // open the device
     bool open(void);
@@ -57,6 +57,7 @@ class TimepixHandler {
 
     // the string identifier of the sensor
     string name_;
+    string idname_;
 
     // whether the device is openned
     bool opened;
@@ -72,7 +73,7 @@ class TimepixHandler {
     uint16_t dacs[14];
     uint16_t threshold;  
     double exposure;
-    double batch_exposure_count;
+    int batch_exposure_count;
     double bias;
     int mode;
     string equalization_file;
@@ -81,6 +82,9 @@ class TimepixHandler {
 
     uint16_t image[MATRIX_SIZE];
     uint8_t equalization[MATRIX_SIZE];
+    double time_total;
+    ros::Time exposure_started;
+    double total_exposing_time;
 
   private:
 
@@ -96,6 +100,7 @@ class TimepixHandler {
     void doSingleExposure(void);
     bool compareStrings(const char * a, const char * b);
     bool reOpen(void);
+    void interruptMeasurement(void);
 
   private:
     

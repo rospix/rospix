@@ -17,7 +17,7 @@
 using namespace std;
 
 // the constructor
-TimepixHandler::TimepixHandler(ros::NodeHandle nh, string equalization_directory) {
+TimepixHandler::TimepixHandler(ros::NodeHandle nh, string idname, string equalization_directory) {
 
   this->equalization_directory = equalization_directory;
 
@@ -28,7 +28,8 @@ TimepixHandler::TimepixHandler(ros::NodeHandle nh, string equalization_directory
 
   memset(equalization, 0, MATRIX_SIZE * sizeof(uint8_t));
 
-  this->nh_ = nh;
+  nh_ = nh;
+  idname_ = idname;
 
   nh_.param("name", name_, string());
 
@@ -52,20 +53,20 @@ TimepixHandler::TimepixHandler(ros::NodeHandle nh, string equalization_directory
     threshold = uint16_t(tempint);
 
     if (threshold == 0) {
-      ROS_ERROR("Error loading the default threshold from config file.");
+      ROS_ERROR("%s: Error loading the default threshold from config file.", idname_.c_str());
     }
 
     nh_.param("defaults/bias", bias, 0.0);
 
     if (bias == 0) {
-      ROS_ERROR("Error loading the default bias from the config file.");
+      ROS_ERROR("%s: Error loading the default bias from the config file.", idname_.c_str());
     }
 
     nh_.param("equalization", equalization_file, string());
 
     if (equalization_file.empty()) {
 
-      ROS_ERROR("Error loading the name of the equalization file from the config file.");
+      ROS_ERROR("%s: Error loading the name of the equalization file from the config file.", idname_.c_str());
     }
 
     // load dacs
@@ -76,7 +77,7 @@ TimepixHandler::TimepixHandler(ros::NodeHandle nh, string equalization_directory
     nh_.getParam("defaults/dacs", tempList);
 
     if (tempList.size() != 14) {
-      ROS_ERROR("DAC array in the config have wrong length.");
+      ROS_ERROR("%s: DAC array in the config have wrong length.", idname_.c_str());
     } else {
       for (int i = 0; i < 14; i++) {
         dacs[i] = tempList[tempIdx++];
@@ -88,12 +89,12 @@ TimepixHandler::TimepixHandler(ros::NodeHandle nh, string equalization_directory
   nh_.param("defaults/exposure", exposure, 0.0);
 
   if (exposure == 0.0) {
-    ROS_ERROR("Error loading the default exposure time from the config file.");
+    ROS_ERROR("%s: Error loading the default exposure time from the config file.", idname_.c_str());
   }
 
   memset(image, 0, MATRIX_SIZE * sizeof(uint16_t));
 
-  ROS_INFO("Initializing sensor \"%s\".", name_.c_str());
+  ROS_INFO("%s: Initializing sensor \"%s\".", idname_.c_str(), name_.c_str());
 }
 
 void TimepixHandler::changeState(State_t new_state) {
@@ -110,19 +111,19 @@ void TimepixHandler::changeState(State_t new_state) {
 
       if (!opened) {
 
-        ROS_ERROR_THROTTLE(1, "Cannot execute measurement, device not opened.");
+        ROS_ERROR_THROTTLE(1, "%s: Cannot execute measurement, device not opened.", idname_.c_str());
 
-        ROS_INFO("Trying to reopen the device \"%s\"", name_.c_str());
-        
+        ROS_INFO("%s: Trying to reopen the device \"%s\"", idname_.c_str(), name_.c_str());
+
         if (!reOpen()) {
-          
+
           return;
         }
       }
 
       break;
   }
-  
+
   current_state = new_state;
 }
 
@@ -130,18 +131,23 @@ void TimepixHandler::doSingleExposure(void) {
 
   if (!loadDacs()) {
 
-    ROS_ERROR("Error during setting DACs before an exposure");
+    ROS_ERROR("%s: Error during setting DACs before an exposure", idname_.c_str());
+  }
+  
+  if (!setNewBias(bias)) {
+
+    ROS_ERROR("%s: Error during setting bias before an exposure", idname_.c_str());
   }
 
   if (!doExposure(exposure)) {
 
-    ROS_ERROR("Error while doing single exposure, \"%s\".", name_.c_str());
+    ROS_ERROR("%s: Error while doing single exposure, \"%s\".", idname_.c_str(), name_.c_str());
 
   } else {
 
     if (!readImage()) {
 
-      ROS_ERROR("Could not read the image from \"%s\".", name_.c_str());
+      ROS_ERROR("%s: Could not read the image from \"%s\".", idname_.c_str(), name_.c_str());
 
     } else {
 
@@ -156,6 +162,10 @@ void TimepixHandler::mainThread(void) {
 
   while (ros::ok) {
 
+    // for computing time utilization
+    exposure_started = ros::Time::now();
+    total_exposing_time = 0;
+
     switch (current_state) {
 
       case IDLE:
@@ -168,7 +178,12 @@ void TimepixHandler::mainThread(void) {
 
         doSingleExposure();
 
+        ROS_INFO("%s: exposure finished, time utilization %1.2f%%", idname_.c_str(), 100*(total_exposing_time/(ros::Time::now()-exposure_started).toSec()));
+
         changeState(IDLE);
+
+        break;
+
 
         break;
 
@@ -176,9 +191,12 @@ void TimepixHandler::mainThread(void) {
 
         exposing = true;
 
+        ROS_INFO("%s: starting continuous exposure, exposure time %3.3f s", idname_.c_str(), exposure);
+
         while (ros::ok && exposing && opened) {
 
           doSingleExposure();
+          ROS_INFO_THROTTLE(5, "%s: exposures in progress, time utilization %1.2f%%", idname_.c_str(), 100*(total_exposing_time/(ros::Time::now()-exposure_started).toSec()));
         }
 
         changeState(IDLE);
@@ -189,14 +207,18 @@ void TimepixHandler::mainThread(void) {
 
         exposing = true;
 
+        ROS_INFO("%s: starting batch exposure, exposure time %3.3f, %d exposures", idname_.c_str(), exposure, batch_exposure_count);
+
         for (int i = 0; i < batch_exposure_count; i++) {
 
-          if (!opened) {
+          if (!opened || !exposing) {
             break;            
           }
 
           doSingleExposure();
         }
+
+        ROS_INFO("%s: batch exposure finished, time utilization %1.2f%%", idname_.c_str(), 100*(total_exposing_time/(ros::Time::now()-exposure_started).toSec()));
 
         changeState(IDLE);
 
@@ -228,7 +250,7 @@ bool TimepixHandler::open(void) {
 
     opened = true;
 
-    ROS_INFO("Successfully opened device \"%s\".", name_.c_str());
+    ROS_INFO("%s: Successfully opened device \"%s\".", idname_.c_str(), name_.c_str());
 
   } else {
 
@@ -249,7 +271,7 @@ bool TimepixHandler::open(void) {
 
       chip_id = chipID(id);
 
-      ROS_INFO("Successfully opened USB Lite \"%s\", its chip is is \"%s\".", name_.c_str(), chip_id.c_str());
+      ROS_INFO("%s: Successfully opened USB Lite \"%s\", its chip is is \"%s\".", idname_.c_str(), name_.c_str(), chip_id.c_str());
 
       interface = USB_LITE;  
       opened = true;
@@ -272,7 +294,7 @@ bool TimepixHandler::open(void) {
 
         chip_id = chipID(id);
 
-        ROS_INFO("Successfully opened FitPix \"%s\", its chip is is \"%s\".", name_.c_str(), chip_id.c_str());
+        ROS_INFO("%s: Successfully opened FitPix \"%s\", its chip is is \"%s\".", idname_.c_str(), name_.c_str(), chip_id.c_str());
 
         interface = FITPIX;
         opened = true;
@@ -296,22 +318,22 @@ bool TimepixHandler::open(void) {
     image_publisher = nh_.advertise<rospix::Image>("image", 1);
 
     if (!loadDacs()) {
-      ROS_ERROR("Error while loading DACs after openning the device.");
+      ROS_ERROR("%s: Error while loading DACs after openning the device.", idname_.c_str());
     }
 
     if (!setNewBias(bias)) {
-      ROS_ERROR("Error while setting bias after openning the device.");
+      ROS_ERROR("%s: Error while setting bias after openning the device.", idname_.c_str());
     }
 
     if (!loadEqualization()) {
 
-      ROS_ERROR("Failed to load the equalization matrix.");  
+      ROS_ERROR("%s: Failed to load the equalization matrix.", idname_.c_str());  
       return false; 
     }
 
     if (!setEqualization()) {
 
-      ROS_ERROR("Failed to set the equalization matrix, probably communication problem.");
+      ROS_ERROR("%s: Failed to set the equalization matrix, probably communication problem.", idname_.c_str());
       return false;
     }
 
@@ -320,7 +342,7 @@ bool TimepixHandler::open(void) {
 
     if (!setMode(tempmode)) {
 
-      ROS_ERROR("Failed to set sensor mode.");
+      ROS_ERROR("%s: Failed to set sensor mode.", idname_.c_str());
       return false;
     }
 
@@ -358,11 +380,11 @@ bool TimepixHandler::reOpen(void) {
     if (error == 0) {
 
       if (!loadEqualization() || !setNewBias(bias)) {
-      
+
         return false;
       }
 
-      ROS_INFO("Successfully reopened USB Lite \"%s\".", name_.c_str());
+      ROS_INFO("%s: Successfully reopened USB Lite \"%s\".", idname_.c_str(), name_.c_str());
 
       opened = true;
     }
@@ -381,11 +403,11 @@ bool TimepixHandler::reOpen(void) {
     if (error == 0) {
 
       if (!loadEqualization() || !setNewBias(bias)) {
-      
+
         return false;
       }
 
-      ROS_INFO("Successfully reopened FitPix \"%s\".", name_.c_str());
+      ROS_INFO("%s: Successfully reopened FitPix \"%s\".", idname_.c_str(), name_.c_str());
 
       opened = true;
     }
@@ -393,7 +415,7 @@ bool TimepixHandler::reOpen(void) {
 
   if (!opened) {
 
-    ROS_ERROR("Reopenning of FitPix \"%s\" failed.", name_.c_str());
+    ROS_ERROR("%s: Reopenning of FitPix \"%s\" failed.", idname_.c_str(), name_.c_str());
   }
 
   return opened;
@@ -410,8 +432,8 @@ bool TimepixHandler::singleExposureCallback(rospix::Exposure::Request &req, rosp
 
   if (current_state != IDLE) {
 
+    res.message = "Measurement in progress.";
     res.success = false;
-    res.message = "We are already measuring.";
     return true;
   }
 
@@ -513,7 +535,7 @@ bool TimepixHandler::loadEqualization(void) {
 
   if (F == NULL) {
 
-    ROS_ERROR("Cannot read the equalization from %s!", path.c_str());
+    ROS_ERROR("%s: Cannot read the equalization from %s!", idname_.c_str(), path.c_str());
     return false;
   }
 
@@ -522,7 +544,7 @@ bool TimepixHandler::loadEqualization(void) {
 
     if (fread(&tempByte, 1, 1, F) != 1) {
 
-      ROS_ERROR("Error reading eqialization file!");
+      ROS_ERROR("%s: Error reading eqialization file!", idname_.c_str());
       return false;
     }
 
@@ -543,7 +565,7 @@ bool TimepixHandler::setEqualization(void) {
 
   if (!equalization_loaded) {
 
-    ROS_ERROR("Cannot set the equalization, matrix not loaded.");
+    ROS_ERROR("%s: Cannot set the equalization, matrix not loaded.", idname_.c_str());
     return false;
   }
 
@@ -564,7 +586,7 @@ bool TimepixHandler::setEqualization(void) {
 
   if (!readImage()) {
 
-    ROS_WARN("Error while cleaning sensor after loading equalization.");
+    ROS_WARN("%s: Error while cleaning sensor after loading equalization.", idname_.c_str());
   }
 
   memset(image, 0, MATRIX_SIZE * sizeof(uint16_t));
@@ -589,6 +611,8 @@ bool TimepixHandler::doExposure(double time) {
 
   int rc = 0;
 
+  ros::Time startTime = ros::Time::now();
+
   switch (interface) {
 
     case USB_LITE:
@@ -603,6 +627,8 @@ bool TimepixHandler::doExposure(double time) {
 
       break;
   }
+
+  total_exposing_time += (ros::Time::now() - startTime).toSec();
 
   if (rc == 0) {
     return true;
@@ -711,7 +737,7 @@ void TimepixHandler::simulateExposure(void) {
       }
       fclose(f);
     } else {
-      ROS_WARN("Cannot open file with dummy radiation background");
+      ROS_WARN("%s: Cannot open file with dummy radiation background", idname_.c_str());
     }
   }
 }
@@ -757,6 +783,7 @@ bool TimepixHandler::publishImage(void) {
   newImage.interface = name_;
   newImage.threshold = threshold;
   newImage.bias = bias;
+  newImage.mode = mode;
   newImage.exposure_time = exposure;
 
   for (int i = 0; i < 65536; i++) {
@@ -773,7 +800,7 @@ bool TimepixHandler::setMode(int newmode) {
     return true;
   }
 
-  ROS_INFO("Setting mode to %d", newmode);
+  ROS_INFO("%s: Setting mode to %d", idname_.c_str(), newmode);
 
   for (int i = 0; i < MATRIX_SIZE; i++) {
     if (newmode == 0)
@@ -782,14 +809,14 @@ bool TimepixHandler::setMode(int newmode) {
       equalization[i] = (equalization[i] | 0b01000000);
   }
 
-  mode = newmode;
-
   if (!setEqualization()) {
 
-    ROS_ERROR("Error during loading equalization while setting a mode.");
+    ROS_ERROR("%s: Error during loading equalization while setting a mode.", idname_.c_str());
     return false;
 
   } else {
+  
+    mode = newmode;
     return true;
   }
 }
@@ -798,12 +825,13 @@ bool TimepixHandler::setModeCallback(rospix::SetInt::Request &req, rospix::SetIn
 
   if (opened) {
 
-    if (current_state != IDLE) {
+    if (current_state == IDLE) {
 
       if (!setMode(req.value)) {
 
         res.message = "Error while setting mode.";
         res.success = false;
+
       } else {
 
         res.success = true;
@@ -838,8 +866,17 @@ bool TimepixHandler::continuouExposureCallback(rospix::Exposure::Request &req, r
 
   if (current_state != IDLE) {
 
+    if (current_state == CONTINOUS_EXPOSURE) {
+
+      exposure = req.exposure_time;
+      total_exposing_time = 0;
+      exposure_started = ros::Time::now();
+      res.message = "Already measuring, changing the exposure time.";
+      return true;
+    }
+
+    res.message = "Measurement in progress.";
     res.success = false;
-    res.message = "We are already measuring.";
     return true;
   }
 
@@ -868,21 +905,17 @@ bool TimepixHandler::batchExposureCallback(rospix::BatchExposure::Request &req, 
     return true;
   }
 
-  if (current_state != IDLE) {
+  if (current_state == IDLE) {
 
-    res.success = false;
-    res.message = "We are already measuring.";
+    batch_exposure_count = req.exposure_count;
+    exposure = req.exposure_time;
+
+    changeState(BATCH_EXPOSURE);
+
+    res.success = true;
+    res.message = "Meaurement started.";
     return true;
   }
-
-  exposure = req.exposure_time;
-  batch_exposure_count = req.exposure_count;
-
-  changeState(BATCH_EXPOSURE);
-
-  res.success = true;
-  res.message = "Meaurement started.";
-  return true;
 }
 
 bool TimepixHandler::interruptMeasurementCallback(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res) {
@@ -936,13 +969,6 @@ bool TimepixHandler::setBiasCallback(rospix::SetDouble::Request &req, rospix::Se
 
   bias = req.value;
 
-  if (!setNewBias(bias)) {
-
-    res.success = false;
-    res.message = "Error during setting new bias.";
-    return true;
-  }
-
   res.success = true;
   res.message = "New bias set.";
   return true;
@@ -958,6 +984,8 @@ bool TimepixHandler::setExposureCallback(rospix::SetDouble::Request &req, rospix
   }
 
   exposure = req.value;
+  total_exposing_time = 0;
+  exposure_started = ros::Time::now();
 
   res.success = true;
   res.message = "New exposure time set.";

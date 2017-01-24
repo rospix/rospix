@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
     sprintf(id_char, "sensor_%d", i);
     string id_str = string(id_char);
 
-    TimepixHandler * sensor = new TimepixHandler(ros::NodeHandle(string("~/")+id_str), equalization_directory);
+    TimepixHandler * sensor = new TimepixHandler(ros::NodeHandle(string("~/")+id_str), id_str, equalization_directory);
 
     if (!sensor->open()) {
       ROS_WARN("Failed to open \"%s\"", id_str.c_str());
