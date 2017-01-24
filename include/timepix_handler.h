@@ -85,6 +85,8 @@ class TimepixHandler {
     double time_total;
     ros::Time exposure_started;
     double total_exposing_time;
+  
+    rospix::Image outputImage;
 
   private:
 

@@ -129,6 +129,14 @@ void TimepixHandler::changeState(State_t new_state) {
 
 void TimepixHandler::doSingleExposure(void) {
 
+  // save the settings to the output image before taking the exposure...
+  outputImage.stamp = ros::Time::now();
+  outputImage.interface = name_;
+  outputImage.threshold = threshold;
+  outputImage.bias = bias;
+  outputImage.mode = mode;
+  outputImage.exposure_time = exposure;
+
   if (!loadDacs()) {
 
     ROS_ERROR("%s: Error during setting DACs before an exposure", idname_.c_str());
@@ -748,7 +756,7 @@ void TimepixHandler::simulateExposure(void) {
   }
 
   double dt = (ros::Time::now() - start_time).toSec();
-  
+
   if (dt < exposure) {
     ros::Duration d(exposure - dt);
     d.sleep();
@@ -789,20 +797,11 @@ bool TimepixHandler::readImage(void) {
 
 bool TimepixHandler::publishImage(void) {
 
-  rospix::Image newImage;
-
-  newImage.stamp = ros::Time::now();
-  newImage.interface = name_;
-  newImage.threshold = threshold;
-  newImage.bias = bias;
-  newImage.mode = mode;
-  newImage.exposure_time = exposure;
-
   for (int i = 0; i < 65536; i++) {
-    newImage.image[i] = image[i];
+    outputImage.image[i] = image[i];
   }
 
-  image_publisher.publish(newImage);
+  image_publisher.publish(outputImage);
 }
 
 bool TimepixHandler::setMode(int newmode) {
@@ -881,8 +880,6 @@ bool TimepixHandler::continuouExposureCallback(rospix::Exposure::Request &req, r
     if (current_state == CONTINOUS_EXPOSURE) {
 
       exposure = req.exposure_time;
-      total_exposing_time = 0;
-      exposure_started = ros::Time::now();
       res.message = "Already measuring, changing the exposure time.";
       return true;
     }
@@ -893,6 +890,8 @@ bool TimepixHandler::continuouExposureCallback(rospix::Exposure::Request &req, r
   }
 
   exposure = req.exposure_time;
+  total_exposing_time = 0;
+  exposure_started = ros::Time::now();
 
   changeState(CONTINOUS_EXPOSURE);
 
@@ -996,8 +995,6 @@ bool TimepixHandler::setExposureCallback(rospix::SetDouble::Request &req, rospix
   }
 
   exposure = req.value;
-  total_exposing_time = 0;
-  exposure_started = ros::Time::now();
 
   res.success = true;
   res.message = "New exposure time set.";
