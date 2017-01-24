@@ -133,7 +133,7 @@ void TimepixHandler::doSingleExposure(void) {
 
     ROS_ERROR("%s: Error during setting DACs before an exposure", idname_.c_str());
   }
-  
+
   if (!setNewBias(bias)) {
 
     ROS_ERROR("%s: Error during setting bias before an exposure", idname_.c_str());
@@ -178,7 +178,7 @@ void TimepixHandler::mainThread(void) {
 
         doSingleExposure();
 
-        ROS_INFO("%s: exposure finished, time utilization %1.2f%%", idname_.c_str(), 100*(total_exposing_time/(ros::Time::now()-exposure_started).toSec()));
+        ROS_INFO("%s: exposure finished, time utilization %1.2f%%", idname_.c_str(), 100.0*(total_exposing_time/(ros::Time::now()-exposure_started).toSec()));
 
         changeState(IDLE);
 
@@ -601,40 +601,44 @@ bool TimepixHandler::setEqualization(void) {
 
 bool TimepixHandler::doExposure(double time) {
 
-  if (dummy) {
-
-    // simulate the exposure time
-    ros::Duration d(exposure);
-    d.sleep();
-    return true;
-  }
-
   int rc = 0;
 
   ros::Time startTime = ros::Time::now();
 
-  switch (interface) {
+  if (dummy) {
 
-    case USB_LITE:
+    // simulate the exposure time
+    simulateExposure();
 
-      rc = doAcquisition(id, time);
+  } else {
 
-      break;
+    switch (interface) {
 
-    case FITPIX:
+      case USB_LITE:
 
-      rc = doAcquisitionFpx(id, time);
+        rc = doAcquisition(id, time);
 
-      break;
+        break;
+
+      case FITPIX:
+
+        rc = doAcquisitionFpx(id, time);
+
+        break;
+    }
   }
 
   total_exposing_time += (ros::Time::now() - startTime).toSec();
 
   if (rc == 0) {
+
     return true;
+
   } else {
+
     opened = false;
     return false;
+
   }
 }
 
@@ -669,6 +673,8 @@ int TimepixHandler::randi(int from, int to) {
 }
 
 void TimepixHandler::simulateExposure(void) {
+
+  ros::Time start_time = ros::Time::now();
 
   // load some random background noise
   memset(image, 0, MATRIX_SIZE * sizeof(uint16_t));
@@ -740,13 +746,19 @@ void TimepixHandler::simulateExposure(void) {
       ROS_WARN("%s: Cannot open file with dummy radiation background", idname_.c_str());
     }
   }
+
+  double dt = (ros::Time::now() - start_time).toSec();
+  
+  if (dt < exposure) {
+    ros::Duration d(exposure - dt);
+    d.sleep();
+  }
 }
 
 bool TimepixHandler::readImage(void) {
 
   if (dummy) {
 
-    simulateExposure();
     return true;
   }
 
@@ -815,7 +827,7 @@ bool TimepixHandler::setMode(int newmode) {
     return false;
 
   } else {
-  
+
     mode = newmode;
     return true;
   }
