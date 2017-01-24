@@ -68,10 +68,9 @@ int main(int argc, char** argv) {
 
   status.publish(newStatus);
 
-  ros::Duration d(2);
-  d.sleep();
-
-  ros::spin();
+  ros::AsyncSpinner spinner(number_of_detectors);
+  spinner.start();
+  ros::waitForShutdown();
 
   return 0;
 }
