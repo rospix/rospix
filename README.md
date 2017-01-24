@@ -13,7 +13,7 @@ roslaunch rospix list_device
 ```
 A list of device names will appear.
 Copy the insides of double commas, corresponding to your interface.
-Is supposed to look similar to: **Medipix2 ver 1.32 sn: 1096**.
+It is supposed to look similar to: **Medipix2 ver 1.32 sn: 1096**.
 Create a config yaml (or modify the example in **config/**) file with following contents:
 
 ```
@@ -39,10 +39,10 @@ sensor_0: # the names are fixed, just the number change
     dacs: [1,100,255,127,127,0,340,7,130,128,80,85,128,128]
 ```
 
-Secondly, place a pixel calibration matrix (equalization matrix) into **equalizations/** folder.
+Secondly, place a pixel configuration matrix (equalization matrix) into **equalizations/** folder.
 
 Lastly launch the node using launch file example **test.launch** in **launch/**.
-It loads the example config file and sets the equalization diretory.
+It loads the example config file and sets the equalization directory.
 ```bash
 roslaunch rospix test.launch
 ```
@@ -67,7 +67,7 @@ roslaunch rospix test.launch
 </launch>
 ```
 
-## Dummy detectors
+### Dummy detectors
 
 The node allows creating ("connecting") dummy detectors. Any number of dummy detectors
 can be connected, even while real detectors are present. Here is an example of **config file**
@@ -87,6 +87,50 @@ sensor_1:
     exposure: 1.0             # [seconds]
 ```
 Images for creating artificial radiation background are located in the **dummy** subfolder. If anyone should provide their own additional images, copy them there and adjust **n_images** accordingly.
+
+## Interacting with the interfaces
+
+After connecting to the devices, a message is published on
+```
+/rospix/status
+```
+reporting how many interfaces have been successfully opened.
+Namespaces will appeare for the opened, named as follows:
+```
+/rospix/sensor_0/...
+/rospix/sensor_1/...
+...
+```
+
+Following services provide control over some basic operations:
+```
+/rospix/sensor_0/do_batch_exposure
+/rospix/sensor_0/do_continuous_exposure
+/rospix/sensor_0/do_single_exposure
+/rospix/sensor_0/interrupt_measurement
+/rospix/sensor_0/set_bias
+/rospix/sensor_0/set_exposure_time
+/rospix/sensor_0/set_mode
+/rospix/sensor_0/set_threshold
+...
+/rospix/sensor_1/...
+```
+
+Resulting images are published at
+```
+/rospix/sensor_0/image
+/rospix/sensor_...
+```
+as a topic containing:
+```
+time stamp
+float64 exposure_time
+float64 bias
+int32 threshold
+string interface
+int32 mode
+int16[65536] image
+```
 
 # Prerequsities
 
