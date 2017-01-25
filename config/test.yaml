@@ -11,6 +11,9 @@ sensor_0: # the names are fixed, just the number change
   # location of the equalization file
   # location is relative to a directory specified in launch file
   equalization: 'lite_rigaku.bpc' # *.bpc is needed
+
+  # print percentage of sensor exposure time to real time
+  print_utilization: true
   
   defaults:
     threshold: 340    # [-]
@@ -26,7 +29,7 @@ sensor_0: # the names are fixed, just the number change
 sensor_1: # the names are fixed, just the number change
 
   name: 'dummy'
-
+  
   simulate_focus: true        # should we simulate optics?
   optics_dimension: 2         # optics dimensionality 1=1D, 2=2D
   photon_flux: 100            # [photons/s], whole number

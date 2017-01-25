@@ -32,17 +32,18 @@ TimepixHandler::TimepixHandler(ros::NodeHandle nh, string idname, string equaliz
   idname_ = idname;
 
   nh_.param("name", name_, string());
+  nh_.param("print_utilization", print_utilization_, false);
 
   if (name_.compare(string("dummy")) == 0) {
 
     dummy = true;
     opened = true;
 
-    nh_.param("simulate_focus", dummy_simulate_focus, false);
-    nh_.param("photon_flux", dummy_photon_flux, 100);
-    nh_.param("simulate_background", simulate_background, false);
-    nh_.param("n_images", dummy_n_images, 0);
-    nh_.param("optics_dimension", optics_dimension, 1);
+    nh_.param("simulate_focus", dummy_simulate_focus_, false);
+    nh_.param("photon_flux", dummy_photon_flux_, 100);
+    nh_.param("simulate_background", simulate_background_, false);
+    nh_.param("n_images", dummy_n_images_, 0);
+    nh_.param("optics_dimension", optics_dimension_, 1);
 
   } else {
 
@@ -186,7 +187,10 @@ void TimepixHandler::mainThread(void) {
 
         doSingleExposure();
 
-        ROS_INFO("%s: exposure finished, time utilization %1.2f%%", idname_.c_str(), 100.0*(total_exposing_time/(ros::Time::now()-exposure_started).toSec()));
+        if (print_utilization_) {
+        
+          ROS_INFO("%s: exposure finished, time utilization %1.2f%%", idname_.c_str(), 100.0*(total_exposing_time/(ros::Time::now()-exposure_started).toSec()));
+        }
 
         changeState(IDLE);
 
@@ -204,7 +208,11 @@ void TimepixHandler::mainThread(void) {
         while (ros::ok && exposing && opened) {
 
           doSingleExposure();
-          ROS_INFO_THROTTLE(5, "%s: exposures in progress, time utilization %1.2f%%", idname_.c_str(), 100*(total_exposing_time/(ros::Time::now()-exposure_started).toSec()));
+
+          if (print_utilization_) {
+            
+              ROS_INFO_THROTTLE(5, "%s: exposures in progress, time utilization %1.2f%%", idname_.c_str(), 100*(total_exposing_time/(ros::Time::now()-exposure_started).toSec()));
+          }
         }
 
         changeState(IDLE);
@@ -226,7 +234,10 @@ void TimepixHandler::mainThread(void) {
           doSingleExposure();
         }
 
-        ROS_INFO("%s: batch exposure finished, time utilization %1.2f%%", idname_.c_str(), 100*(total_exposing_time/(ros::Time::now()-exposure_started).toSec()));
+        if (print_utilization_) {
+          
+          ROS_INFO("%s: batch exposure finished, time utilization %1.2f%%", idname_.c_str(), 100*(total_exposing_time/(ros::Time::now()-exposure_started).toSec()));
+        }
 
         changeState(IDLE);
 
@@ -688,17 +699,17 @@ void TimepixHandler::simulateExposure(void) {
   memset(image, 0, MATRIX_SIZE * sizeof(uint16_t));
 
   // simulate the photons
-  if (dummy_simulate_focus) {
+  if (dummy_simulate_focus_) {
 
     int x, y;
-    for (int i = 0; i < int(dummy_photon_flux*exposure); i++) {
+    for (int i = 0; i < int(dummy_photon_flux_*exposure); i++) {
 
       y = int(samplePseudoNormal(128, 64));
 
       if (y < 0 || y > 255)
         continue;
 
-      if (optics_dimension == 1)
+      if (optics_dimension_ == 1)
         x = floor(randi(0, 256));
       else {
 
@@ -714,20 +725,20 @@ void TimepixHandler::simulateExposure(void) {
 
   } else {
 
-    for (int i = 0; i < int(dummy_photon_flux*exposure); i++) {
+    for (int i = 0; i < int(dummy_photon_flux_*exposure); i++) {
 
       image[randi(0, 65536)] += randi(1, 250);
     } 
   }
 
   // simulate background
-  if (simulate_background) {
+  if (simulate_background_) {
 
     // load nth dummy image
     char temp[30];
     sprintf(temp, "/dummy/%d.txt", dummy_counter);
 
-    if (++dummy_counter > (dummy_n_images-1)) {
+    if (++dummy_counter > (dummy_n_images_-1)) {
       dummy_counter = 0;
     }
 

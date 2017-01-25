@@ -85,6 +85,7 @@ class TimepixHandler {
     double time_total;
     ros::Time exposure_started;
     double total_exposing_time;
+    bool print_utilization_;
   
     rospix::Image outputImage;
 
@@ -107,16 +108,16 @@ class TimepixHandler {
   private:
     
     bool dummy;
-    bool dummy_simulate_focus;
-    int dummy_photon_flux;
+    bool dummy_simulate_focus_;
+    int dummy_photon_flux_;
     double samplePseudoNormal(double mean, double std);
     void simulateExposure(void);
     double randf(double from, double to);
     int randi(int from, int to);
     int dummy_counter;
-    bool simulate_background;
-    int dummy_n_images;
-    int optics_dimension;
+    bool simulate_background_;
+    int dummy_n_images_;
+    int optics_dimension_;
 
   private:
 
