@@ -398,7 +398,7 @@ bool TimepixHandler::reOpen(void) {
     // success?
     if (error == 0) {
 
-      if (!loadEqualization() || !setNewBias(bias)) {
+      if (!setEqualization() || !setNewBias(bias)) {
 
         return false;
       }
@@ -825,9 +825,11 @@ bool TimepixHandler::setMode(int newmode) {
   ROS_INFO("%s: Setting mode to %d", idname_.c_str(), newmode);
 
   for (int i = 0; i < MATRIX_SIZE; i++) {
-    if (newmode == 0)
-      equalization[i] = (equalization[i] & 0b00111111);
-    else
+    
+    // reset it (basically sets mpc mode)
+    equalization[i] = (equalization[i] & 0b00111111);
+    
+    if (newmode == 1) // set timepix of if needed
       equalization[i] = (equalization[i] | 0b01000000);
   }
 
