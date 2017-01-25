@@ -1,0 +1,15 @@
+[Chip0]
+IKrum:1
+Disc:100
+Preamp:255
+BuffAnalogA:127
+BuffAnalogB:127
+Hist:0
+THL:340
+THLCoarse:7
+Vcas:130
+FBK:128
+GND:80
+THS:85
+BiasLVDS:128
+RefLVDS:128
