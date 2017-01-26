@@ -188,7 +188,7 @@ void TimepixHandler::mainThread(void) {
         doSingleExposure();
 
         if (print_utilization_) {
-        
+
           ROS_INFO("%s: exposure finished, time utilization %1.2f%%", idname_.c_str(), 100.0*(total_exposing_time/(ros::Time::now()-exposure_started).toSec()));
         }
 
@@ -210,8 +210,8 @@ void TimepixHandler::mainThread(void) {
           doSingleExposure();
 
           if (print_utilization_) {
-            
-              ROS_INFO_THROTTLE(5, "%s: exposures in progress, time utilization %1.2f%%", idname_.c_str(), 100*(total_exposing_time/(ros::Time::now()-exposure_started).toSec()));
+
+            ROS_INFO_THROTTLE(5, "%s: exposures in progress, time utilization %1.2f%%", idname_.c_str(), 100*(total_exposing_time/(ros::Time::now()-exposure_started).toSec()));
           }
         }
 
@@ -235,7 +235,7 @@ void TimepixHandler::mainThread(void) {
         }
 
         if (print_utilization_) {
-          
+
           ROS_INFO("%s: batch exposure finished, time utilization %1.2f%%", idname_.c_str(), 100*(total_exposing_time/(ros::Time::now()-exposure_started).toSec()));
         }
 
@@ -321,20 +321,15 @@ bool TimepixHandler::open(void) {
     }
   }
 
+  // create publishers
+  image_publisher = nh_.advertise<rospix::Image>("image", 1);
+
+  if (!loadEqualization()) {
+
+    ROS_ERROR("%s: Failed to load the equalization matrix.", idname_.c_str());  
+  }
+
   if (opened) {
-
-    // advertise services
-    service_single_exposure = nh_.advertiseService("do_single_exposure", &TimepixHandler::singleExposureCallback, this);
-    service_continuous_exposure = nh_.advertiseService("do_continuous_exposure", &TimepixHandler::continuouExposureCallback, this);
-    service_batch_exposure = nh_.advertiseService("do_batch_exposure", &TimepixHandler::batchExposureCallback, this);
-    service_set_mode = nh_.advertiseService("set_mode", &TimepixHandler::setModeCallback, this);
-    service_set_bias = nh_.advertiseService("set_bias", &TimepixHandler::setBiasCallback, this);
-    service_set_threshold = nh_.advertiseService("set_threshold", &TimepixHandler::setThresholdCallback, this);
-    service_set_exposure = nh_.advertiseService("set_exposure_time", &TimepixHandler::setExposureCallback, this);
-    service_interrupt_measurement = nh_.advertiseService("interrupt_measurement", &TimepixHandler::interruptMeasurementCallback, this);
-
-    // create publishers
-    image_publisher = nh_.advertise<rospix::Image>("image", 1);
 
     if (!loadDacs()) {
       ROS_ERROR("%s: Error while loading DACs after openning the device.", idname_.c_str());
@@ -344,16 +339,9 @@ bool TimepixHandler::open(void) {
       ROS_ERROR("%s: Error while setting bias after openning the device.", idname_.c_str());
     }
 
-    if (!loadEqualization()) {
-
-      ROS_ERROR("%s: Failed to load the equalization matrix.", idname_.c_str());  
-      return false; 
-    }
-
     if (!setEqualization()) {
 
       ROS_ERROR("%s: Failed to set the equalization matrix, probably communication problem.", idname_.c_str());
-      return false;
     }
 
     int tempmode = 0;
@@ -362,13 +350,22 @@ bool TimepixHandler::open(void) {
     if (!setMode(tempmode)) {
 
       ROS_ERROR("%s: Failed to set sensor mode.", idname_.c_str());
-      return false;
     }
 
     // start the thread
     changeState(IDLE);
     main_thread = std::thread(&TimepixHandler::mainThread, this);
   }
+
+  // advertise services
+  service_single_exposure = nh_.advertiseService("do_single_exposure", &TimepixHandler::singleExposureCallback, this);
+  service_continuous_exposure = nh_.advertiseService("do_continuous_exposure", &TimepixHandler::continuouExposureCallback, this);
+  service_batch_exposure = nh_.advertiseService("do_batch_exposure", &TimepixHandler::batchExposureCallback, this);
+  service_set_mode = nh_.advertiseService("set_mode", &TimepixHandler::setModeCallback, this);
+  service_set_bias = nh_.advertiseService("set_bias", &TimepixHandler::setBiasCallback, this);
+  service_set_threshold = nh_.advertiseService("set_threshold", &TimepixHandler::setThresholdCallback, this);
+  service_set_exposure = nh_.advertiseService("set_exposure_time", &TimepixHandler::setExposureCallback, this);
+  service_interrupt_measurement = nh_.advertiseService("interrupt_measurement", &TimepixHandler::interruptMeasurementCallback, this);
 
   return opened;
 }
@@ -434,7 +431,7 @@ bool TimepixHandler::reOpen(void) {
 
   if (!opened) {
 
-    ROS_ERROR("%s: Reopenning of FitPix \"%s\" failed.", idname_.c_str(), name_.c_str());
+    ROS_ERROR("%s: Reopenning of interface \"%s\" failed.", idname_.c_str(), name_.c_str());
   }
 
   return opened;
@@ -825,10 +822,10 @@ bool TimepixHandler::setMode(int newmode) {
   ROS_INFO("%s: Setting mode to %d", idname_.c_str(), newmode);
 
   for (int i = 0; i < MATRIX_SIZE; i++) {
-    
+
     // reset it (basically sets mpc mode)
     equalization[i] = (equalization[i] & 0b00111111);
-    
+
     if (newmode == 1) // set timepix of if needed
       equalization[i] = (equalization[i] | 0b01000000);
   }
