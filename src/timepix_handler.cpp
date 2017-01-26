@@ -311,7 +311,7 @@ bool TimepixHandler::open(void) {
       // success?
       if (error == 0) {
 
-        chip_id = chipID(id);
+        chip_id = chipIDFpx(id);
 
         ROS_INFO("%s: Successfully opened FitPix \"%s\", its chip is is \"%s\".", idname_.c_str(), name_.c_str(), chip_id.c_str());
 
@@ -859,6 +859,7 @@ bool TimepixHandler::setModeCallback(rospix::SetInt::Request &req, rospix::SetIn
       } else {
 
         res.success = true;
+        res.message = "Mode changed.";
         char tempChar[20];
         sprintf(tempChar, "Mode changed to %s.", ((mode == MPX) ? "MPX" : "TOT"));
         res.message = string(tempChar);
@@ -868,12 +869,14 @@ bool TimepixHandler::setModeCallback(rospix::SetInt::Request &req, rospix::SetIn
 
       res.message = "Cannot set the mode during measurement.";
       res.success = false;
+      return true;
     }
 
   } else {
 
     res.message = "Device not openned!";
     res.success = false;
+    return true;
   }
 
   return true;
