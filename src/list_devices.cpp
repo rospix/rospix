@@ -36,5 +36,7 @@ int main(int argc, char** argv) {
     ROS_INFO("FitPix n.%d: \"%s\"", i+1, devNames[i]);
   }
 
+  ros::shutdown();
+
   return 0;
 }
