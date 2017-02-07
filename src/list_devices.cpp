@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
 
   for (int i = 0; i < devCount; i++) {
 
-    ROS_INFO("USB LIte n.%d: \"%s\"", i+1, devNames[i]);
+    ROS_INFO("USB Lite n.%d: \"%s\"", i+1, devNames[i]);
   }
 
   //////////////////// List Fitpix devices \\\\\\\\\\\\\\\\\\\\\
