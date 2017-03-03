@@ -76,6 +76,7 @@ class TimepixHandler {
     int batch_exposure_count;
     double bias;
     int mode;
+    int clock;
     string equalization_file;
     bool equalization_loaded;
     bool exposing;
@@ -99,7 +100,9 @@ class TimepixHandler {
     bool readImage(void);
     bool publishImage(void);
     bool setEqualization(void);
+    bool setNewClock(const int new_clock);
     bool setMode(int newmode);
+    bool setClock(int newclock);
     void doSingleExposure(void);
     bool compareStrings(const char * a, const char * b);
     bool reOpen(void);
@@ -127,6 +130,7 @@ class TimepixHandler {
     ros::ServiceServer service_set_mode;
     ros::ServiceServer service_set_exposure;
     ros::ServiceServer service_set_bias;
+    ros::ServiceServer service_set_clock;
     ros::ServiceServer service_set_threshold;
     ros::ServiceServer service_interrupt_measurement;
 
@@ -152,6 +156,7 @@ class TimepixHandler {
     bool setThresholdCallback(rospix::SetInt::Request &req, rospix::SetInt::Response &res);
     bool setBiasCallback(rospix::SetDouble::Request &req, rospix::SetDouble::Response &res);
     bool setExposureCallback(rospix::SetDouble::Request &req, rospix::SetDouble::Response &res);
+    bool setClockCallback(rospix::SetInt::Request &req, rospix::SetInt::Response &res);
 };
 
 #endif

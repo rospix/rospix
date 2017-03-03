@@ -9,7 +9,7 @@
     <!-- specify where should the node look for equalization matrices -->
     <param name="equalization_directory" value="$(find rospix)/equalizations/" />
 
-    <!-- PUBLISHERS -->
+    <!-- publishers -->
     <remap from="~status" to="~status" />
 
   </node>

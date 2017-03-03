@@ -20,6 +20,7 @@ sensor_0: # the names are fixed, just the number change
     bias: 10.0        # [Volt]
     exposure: 1.0     # [second]
     mode: 1           # [0 = MPX, 1 = TOT]
+    clock: 20         # {10, 20, 40} Mhz are the only allowed values
 
     # dacs can be found in calibration protocol (or equalization protocol)
     dacs: [1,100,255,127,127,0,340,7,130,128,80,85,128,128]

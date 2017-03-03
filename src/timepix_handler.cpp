@@ -70,6 +70,13 @@ TimepixHandler::TimepixHandler(ros::NodeHandle nh, string idname, string equaliz
       ROS_ERROR("%s: Error loading the name of the equalization file from the config file.", idname_.c_str());
     }
 
+    nh_.param("defaults/clock", clock, 0);
+
+    if (clock == 0) {
+
+      ROS_ERROR("%s: Error loading the clock from the config file.", idname_.c_str());
+    }
+
     // load dacs
     std::vector<double> tempList;
     int tempIdx = 0;
@@ -146,6 +153,11 @@ void TimepixHandler::doSingleExposure(void) {
   if (!setNewBias(bias)) {
 
     ROS_ERROR("%s: Error during setting bias before an exposure", idname_.c_str());
+  }
+
+  if (!setNewClock(clock)) {
+
+    ROS_ERROR("%s: Error during setting clock before an exposure", idname_.c_str());
   }
 
   if (!doExposure(exposure)) {
@@ -332,16 +344,23 @@ bool TimepixHandler::open(void) {
   if (opened) {
 
     if (!loadDacs()) {
+
       ROS_ERROR("%s: Error while loading DACs after openning the device.", idname_.c_str());
     }
 
     if (!setNewBias(bias)) {
+
       ROS_ERROR("%s: Error while setting bias after openning the device.", idname_.c_str());
     }
 
     if (!setEqualization()) {
 
       ROS_ERROR("%s: Failed to set the equalization matrix, probably communication problem.", idname_.c_str());
+    }
+
+    if (!setNewClock(clock)) {
+
+      ROS_ERROR("%s: Failed to set the clock, probably communication problem.", idname_.c_str());
     }
 
     int tempmode = 0;
@@ -365,6 +384,7 @@ bool TimepixHandler::open(void) {
   service_set_bias = nh_.advertiseService("set_bias", &TimepixHandler::setBiasCallback, this);
   service_set_threshold = nh_.advertiseService("set_threshold", &TimepixHandler::setThresholdCallback, this);
   service_set_exposure = nh_.advertiseService("set_exposure_time", &TimepixHandler::setExposureCallback, this);
+  service_set_clock = nh_.advertiseService("set_clock", &TimepixHandler::setClockCallback, this);
   service_interrupt_measurement = nh_.advertiseService("interrupt_measurement", &TimepixHandler::interruptMeasurementCallback, this);
 
   return opened;
@@ -395,7 +415,7 @@ bool TimepixHandler::reOpen(void) {
     // success?
     if (error == 0) {
 
-      if (!setEqualization() || !setNewBias(bias)) {
+      if (!setEqualization() || !setNewBias(bias) || !setNewClock(clock)) {
 
         return false;
       }
@@ -418,7 +438,7 @@ bool TimepixHandler::reOpen(void) {
     // success?
     if (error == 0) {
 
-      if (!loadEqualization() || !setNewBias(bias)) {
+      if (!setEqualization() || !setNewBias(bias) || !setNewClock(clock)) {
 
         return false;
       }
@@ -528,6 +548,35 @@ bool TimepixHandler::setNewBias(const double newBias) {
     case FITPIX:
 
       rc = setBiasFpx(id, newBias);
+
+      break;
+  }
+
+  if (rc == 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool TimepixHandler::setNewClock(const int new_clock) {
+
+  if (dummy)
+    return true;
+
+  int rc = 0;
+
+  switch (interface) {
+
+    case USB_LITE:
+
+      rc = setTpxClock(id, double(new_clock));      
+
+      break;
+
+    case FITPIX:
+
+      rc = setTpxClockFpx(id, double(new_clock));
 
       break;
   }
@@ -995,6 +1044,22 @@ bool TimepixHandler::setBiasCallback(rospix::SetDouble::Request &req, rospix::Se
 
   res.success = true;
   res.message = "New bias set.";
+  return true;
+}
+
+bool TimepixHandler::setClockCallback(rospix::SetInt::Request &req, rospix::SetInt::Response &res) {
+
+  if (req.value < 5 || req.value > 45) {
+
+    res.success = false;
+    res.message = "Clock out of bounds {10, 20, 40} Mhz are the only allowed values.";
+    return true;
+  }
+
+  clock = req.value;
+
+  res.success = true;
+  res.message = "New clock set.";
   return true;
 }
 
