@@ -143,6 +143,7 @@ void TimepixHandler::doSingleExposure(void) {
   outputImage.threshold = threshold;
   outputImage.bias = bias;
   outputImage.mode = mode;
+  outputImage.clock = clock;
   outputImage.exposure_time = exposure;
 
   if (!loadDacs()) {
