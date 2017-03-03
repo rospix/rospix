@@ -169,7 +169,7 @@ void TimepixHandler::mainThread(void) {
 
   ros::Duration d(0.1);
 
-  while (ros::ok) {
+  while (ros::ok()) {
 
     // for computing time utilization
     exposure_started = ros::Time::now();
@@ -205,7 +205,7 @@ void TimepixHandler::mainThread(void) {
 
         ROS_INFO("%s: starting continuous exposure, exposure time %3.3f s", idname_.c_str(), exposure);
 
-        while (ros::ok && exposing && opened) {
+        while (ros::ok() && exposing && opened) {
 
           doSingleExposure();
 
@@ -458,7 +458,7 @@ bool TimepixHandler::singleExposureCallback(rospix::Exposure::Request &req, rosp
   changeState(SINGLE_EXPOSURE);
 
   ros::Duration d(0.001);
-  while (ros::ok && current_state != IDLE) {
+  while (ros::ok() && current_state != IDLE) {
 
     d.sleep();
   }
@@ -949,7 +949,7 @@ bool TimepixHandler::interruptMeasurementCallback(std_srvs::Trigger::Request &re
     exposing = false;
 
     ros::Duration d(0.01);
-    while (ros::ok && current_state != IDLE) {
+    while (ros::ok() && current_state != IDLE) {
 
       d.sleep();
     }
