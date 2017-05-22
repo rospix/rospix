@@ -9,11 +9,13 @@
 // some opencv includes
 #include <ros/package.h>
 
-#include <timepix_handler.h>
+#include "timepix_handler.h"
 
 #include <rospix/Status.h>
 
 #include <usb.h>
+
+using namespace std;
 
 list<TimepixHandler *> sensors;
 
@@ -60,7 +62,7 @@ int main(int argc, char** argv) {
   string msg = string(temp);
   newStatus.message = msg;
 
-  if (sensors.size() == number_of_detectors) {
+  if (int(sensors.size()) == number_of_detectors) {
     ROS_INFO_STREAM(msg);
   } else {
     ROS_WARN_STREAM(msg);

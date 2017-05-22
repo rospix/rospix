@@ -31,6 +31,7 @@ generate_messages(DEPENDENCIES
 )
 
 catkin_package(
+	INCLUDE_DIRS include
   CATKIN_DEPENDS message_runtime # image_transport roscpp rospy std_msgs
 )
 
@@ -42,7 +43,8 @@ set(CMAKE_CXX_FLAGS "-std=c++11")
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(include
+include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
