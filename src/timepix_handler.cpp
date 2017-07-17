@@ -1,18 +1,18 @@
-#include <ros/ros.h>
 #include <ros/package.h>
+#include <ros/ros.h>
 
-#include "timepix_handler.h"
 #include <string>
+#include "timepix_handler.h"
 
 // timepix driver headers
 #include "usb.h"
 
 // for reading a file
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
-#include <thread>
 #include <mutex>
+#include <thread>
 
 using namespace std;
 
@@ -21,14 +21,14 @@ TimepixHandler::TimepixHandler(ros::NodeHandle nh, string idname, string equaliz
 
   this->equalization_directory = equalization_directory;
 
-  opened = false;
+  opened              = false;
   equalization_loaded = false;
-  exposing = false;
-  dummy = false;
+  exposing            = false;
+  dummy               = false;
 
   memset(equalization, 0, MATRIX_SIZE * sizeof(uint8_t));
 
-  nh_ = nh;
+  nh_     = nh;
   idname_ = idname;
 
   nh_.param("name", name_, string());
@@ -36,7 +36,7 @@ TimepixHandler::TimepixHandler(ros::NodeHandle nh, string idname, string equaliz
 
   if (name_.compare(string("dummy")) == 0) {
 
-    dummy = true;
+    dummy  = true;
     opened = true;
 
     nh_.param("simulate_focus", dummy_simulate_focus_, false);
@@ -79,7 +79,7 @@ TimepixHandler::TimepixHandler(ros::NodeHandle nh, string idname, string equaliz
 
     // load dacs
     std::vector<double> tempList;
-    int tempIdx = 0;
+    int                 tempIdx = 0;
 
     tempIdx = 0;
     nh_.getParam("defaults/dacs", tempList);
@@ -91,7 +91,6 @@ TimepixHandler::TimepixHandler(ros::NodeHandle nh, string idname, string equaliz
         dacs[i] = tempList[tempIdx++];
       }
     }
-
   }
 
   nh_.param("defaults/exposure", exposure, 0.0);
@@ -138,12 +137,12 @@ void TimepixHandler::changeState(State_t new_state) {
 void TimepixHandler::doSingleExposure(void) {
 
   // save the settings to the output image before taking the exposure...
-  outputImage.stamp = ros::Time::now();
-  outputImage.interface = name_;
-  outputImage.threshold = threshold;
-  outputImage.bias = bias;
-  outputImage.mode = mode;
-  outputImage.clock = clock;
+  outputImage.stamp         = ros::Time::now();
+  outputImage.interface     = name_;
+  outputImage.threshold     = threshold;
+  outputImage.bias          = bias;
+  outputImage.mode          = mode;
+  outputImage.clock         = clock;
   outputImage.exposure_time = exposure;
 
   if (!loadDacs()) {
@@ -185,7 +184,7 @@ void TimepixHandler::mainThread(void) {
   while (ros::ok()) {
 
     // for computing time utilization
-    exposure_started = ros::Time::now();
+    exposure_started    = ros::Time::now();
     total_exposing_time = 0;
 
     switch (current_state) {
@@ -202,7 +201,8 @@ void TimepixHandler::mainThread(void) {
 
         if (print_utilization_) {
 
-          ROS_INFO("%s: exposure finished, time utilization %1.2f%%", idname_.c_str(), 100.0*(total_exposing_time/(ros::Time::now()-exposure_started).toSec()));
+          ROS_INFO("%s: exposure finished, time utilization %1.2f%%", idname_.c_str(),
+                   100.0 * (total_exposing_time / (ros::Time::now() - exposure_started).toSec()));
         }
 
         changeState(IDLE);
@@ -224,7 +224,8 @@ void TimepixHandler::mainThread(void) {
 
           if (print_utilization_) {
 
-            ROS_INFO_THROTTLE(5, "%s: exposures in progress, time utilization %1.2f%%", idname_.c_str(), 100*(total_exposing_time/(ros::Time::now()-exposure_started).toSec()));
+            ROS_INFO_THROTTLE(5, "%s: exposures in progress, time utilization %1.2f%%", idname_.c_str(),
+                              100 * (total_exposing_time / (ros::Time::now() - exposure_started).toSec()));
           }
         }
 
@@ -241,7 +242,7 @@ void TimepixHandler::mainThread(void) {
         for (int i = 0; i < batch_exposure_count; i++) {
 
           if (!opened || !exposing) {
-            break;            
+            break;
           }
 
           doSingleExposure();
@@ -249,7 +250,8 @@ void TimepixHandler::mainThread(void) {
 
         if (print_utilization_) {
 
-          ROS_INFO("%s: batch exposure finished, time utilization %1.2f%%", idname_.c_str(), 100*(total_exposing_time/(ros::Time::now()-exposure_started).toSec()));
+          ROS_INFO("%s: batch exposure finished, time utilization %1.2f%%", idname_.c_str(),
+                   100 * (total_exposing_time / (ros::Time::now() - exposure_started).toSec()));
         }
 
         changeState(IDLE);
@@ -259,7 +261,7 @@ void TimepixHandler::mainThread(void) {
   }
 }
 
-bool TimepixHandler::compareStrings(const char * a, const char * b) {
+bool TimepixHandler::compareStrings(const char *a, const char *b) {
 
   for (int i = 0; i < 50; i++) {
 
@@ -275,8 +277,8 @@ bool TimepixHandler::compareStrings(const char * a, const char * b) {
 
 bool TimepixHandler::open(void) {
 
-  const char * devNames[50];
-  int devCount = 0;
+  const char *devNames[50];
+  int         devCount = 0;
 
   if (dummy) {
 
@@ -305,8 +307,8 @@ bool TimepixHandler::open(void) {
 
       ROS_INFO("%s: Successfully opened USB Lite \"%s\", its chip is is \"%s\".", idname_.c_str(), name_.c_str(), chip_id.c_str());
 
-      interface = USB_LITE;  
-      opened = true;
+      interface = USB_LITE;
+      opened    = true;
 
     } else {
 
@@ -329,7 +331,7 @@ bool TimepixHandler::open(void) {
         ROS_INFO("%s: Successfully opened FitPix \"%s\", its chip is is \"%s\".", idname_.c_str(), name_.c_str(), chip_id.c_str());
 
         interface = FITPIX;
-        opened = true;
+        opened    = true;
       }
     }
   }
@@ -339,7 +341,7 @@ bool TimepixHandler::open(void) {
 
   if (!loadEqualization()) {
 
-    ROS_ERROR("%s: Failed to load the equalization matrix.", idname_.c_str());  
+    ROS_ERROR("%s: Failed to load the equalization matrix.", idname_.c_str());
   }
 
   if (opened) {
@@ -378,14 +380,14 @@ bool TimepixHandler::open(void) {
   }
 
   // advertise services
-  service_single_exposure = nh_.advertiseService("do_single_exposure", &TimepixHandler::singleExposureCallback, this);
-  service_continuous_exposure = nh_.advertiseService("do_continuous_exposure", &TimepixHandler::continuouExposureCallback, this);
-  service_batch_exposure = nh_.advertiseService("do_batch_exposure", &TimepixHandler::batchExposureCallback, this);
-  service_set_mode = nh_.advertiseService("set_mode", &TimepixHandler::setModeCallback, this);
-  service_set_bias = nh_.advertiseService("set_bias", &TimepixHandler::setBiasCallback, this);
-  service_set_threshold = nh_.advertiseService("set_threshold", &TimepixHandler::setThresholdCallback, this);
-  service_set_exposure = nh_.advertiseService("set_exposure_time", &TimepixHandler::setExposureCallback, this);
-  service_set_clock = nh_.advertiseService("set_clock", &TimepixHandler::setClockCallback, this);
+  service_single_exposure       = nh_.advertiseService("do_single_exposure", &TimepixHandler::singleExposureCallback, this);
+  service_continuous_exposure   = nh_.advertiseService("do_continuous_exposure", &TimepixHandler::continuouExposureCallback, this);
+  service_batch_exposure        = nh_.advertiseService("do_batch_exposure", &TimepixHandler::batchExposureCallback, this);
+  service_set_mode              = nh_.advertiseService("set_mode", &TimepixHandler::setModeCallback, this);
+  service_set_bias              = nh_.advertiseService("set_bias", &TimepixHandler::setBiasCallback, this);
+  service_set_threshold         = nh_.advertiseService("set_threshold", &TimepixHandler::setThresholdCallback, this);
+  service_set_exposure          = nh_.advertiseService("set_exposure_time", &TimepixHandler::setExposureCallback, this);
+  service_set_clock             = nh_.advertiseService("set_clock", &TimepixHandler::setClockCallback, this);
   service_interrupt_measurement = nh_.advertiseService("interrupt_measurement", &TimepixHandler::interruptMeasurementCallback, this);
 
   return opened;
@@ -396,8 +398,8 @@ bool TimepixHandler::reOpen(void) {
   if (dummy)
     return true;
 
-  const char * devNames[50];
-  int devCount = 0;
+  const char *devNames[50];
+  int         devCount = 0;
 
   int error = 1;
 
@@ -542,7 +544,7 @@ bool TimepixHandler::setNewBias(const double newBias) {
 
     case USB_LITE:
 
-      rc = setBias(id, newBias);      
+      rc = setBias(id, newBias);
 
       break;
 
@@ -571,7 +573,7 @@ bool TimepixHandler::setNewClock(const int new_clock) {
 
     case USB_LITE:
 
-      rc = setTpxClock(id, double(new_clock));      
+      rc = setTpxClock(id, double(new_clock));
 
       break;
 
@@ -596,7 +598,7 @@ bool TimepixHandler::loadEqualization(void) {
 
   string path = equalization_directory + equalization_file;
 
-  FILE * F;
+  FILE *F;
   F = fopen(path.c_str(), "rb");
 
   if (F == NULL) {
@@ -704,7 +706,6 @@ bool TimepixHandler::doExposure(double time) {
 
     opened = false;
     return false;
-
   }
 }
 
@@ -726,16 +727,16 @@ double TimepixHandler::samplePseudoNormal(double mean, double std) {
 
 double TimepixHandler::randf(double from, double to) {
 
-  double zero_to_one = double((float) rand()) / double(RAND_MAX);
+  double zero_to_one = double((float)rand()) / double(RAND_MAX);
 
-  return (to - from)*zero_to_one + from;
+  return (to - from) * zero_to_one + from;
 }
 
 int TimepixHandler::randi(int from, int to) {
 
-  double zero_to_one = double((float) rand()) / double(RAND_MAX);
+  double zero_to_one = double((float)rand()) / double(RAND_MAX);
 
-  return int(floor(to - from)*zero_to_one) + from;
+  return int(floor(to - from) * zero_to_one) + from;
 }
 
 void TimepixHandler::simulateExposure(void) {
@@ -749,7 +750,7 @@ void TimepixHandler::simulateExposure(void) {
   if (dummy_simulate_focus_) {
 
     int x, y;
-    for (int i = 0; i < int(dummy_photon_flux_*exposure); i++) {
+    for (int i = 0; i < int(dummy_photon_flux_ * exposure); i++) {
 
       y = int(samplePseudoNormal(128, 64));
 
@@ -764,18 +765,17 @@ void TimepixHandler::simulateExposure(void) {
 
         if (x < 0 || y > 255)
           continue;
-
       }
 
-      image[y*256 + x] += randi(1, 250);
+      image[y * 256 + x] += randi(1, 250);
     }
 
   } else {
 
-    for (int i = 0; i < int(dummy_photon_flux_*exposure); i++) {
+    for (int i = 0; i < int(dummy_photon_flux_ * exposure); i++) {
 
       image[randi(0, 65536)] += randi(1, 250);
-    } 
+    }
   }
 
   // simulate background
@@ -785,13 +785,13 @@ void TimepixHandler::simulateExposure(void) {
     char temp[30];
     sprintf(temp, "/dummy/%d.txt", dummy_counter);
 
-    if (++dummy_counter > (dummy_n_images_-1)) {
+    if (++dummy_counter > (dummy_n_images_ - 1)) {
       dummy_counter = 0;
     }
 
-    string path = ros::package::getPath("rospix")+string(temp);
+    string path = ros::package::getPath("rospix") + string(temp);
 
-    FILE * f = fopen(path.c_str(), "r");
+    FILE *f = fopen(path.c_str(), "r");
 
     int tempint;
 
@@ -802,7 +802,7 @@ void TimepixHandler::simulateExposure(void) {
         for (int j = 0; j < 256; j++) {
 
           fscanf(f, "%d ", &tempint);
-          image[j + i*256] += tempint;
+          image[j + i * 256] += tempint;
         }
 
         fscanf(f, "\n");
@@ -876,7 +876,7 @@ bool TimepixHandler::setMode(int newmode) {
     // reset it (basically sets mpc mode)
     equalization[i] = (equalization[i] & 0b00111111);
 
-    if (newmode == 1) // set timepix of if needed
+    if (newmode == 1)  // set timepix of if needed
       equalization[i] = (equalization[i] | 0b01000000);
   }
 
@@ -942,7 +942,7 @@ bool TimepixHandler::continuouExposureCallback(rospix::Exposure::Request &req, r
 
     if (current_state == CONTINOUS_EXPOSURE) {
 
-      exposure = req.exposure_time;
+      exposure    = req.exposure_time;
       res.message = "Already measuring, changing the exposure time.";
       return true;
     }
@@ -952,9 +952,9 @@ bool TimepixHandler::continuouExposureCallback(rospix::Exposure::Request &req, r
     return true;
   }
 
-  exposure = req.exposure_time;
+  exposure            = req.exposure_time;
   total_exposing_time = 0;
-  exposure_started = ros::Time::now();
+  exposure_started    = ros::Time::now();
 
   changeState(CONTINOUS_EXPOSURE);
 
@@ -982,7 +982,7 @@ bool TimepixHandler::batchExposureCallback(rospix::BatchExposure::Request &req, 
   if (current_state == IDLE) {
 
     batch_exposure_count = req.exposure_count;
-    exposure = req.exposure_time;
+    exposure             = req.exposure_time;
 
     changeState(BATCH_EXPOSURE);
 
@@ -1019,7 +1019,7 @@ bool TimepixHandler::setThresholdCallback(rospix::SetInt::Request &req, rospix::
 
   if (req.value >= 0 && req.value <= 1000) {
 
-    threshold = req.value;
+    threshold   = req.value;
     res.success = true;
     res.message = "Threshold changed.";
     return true;
