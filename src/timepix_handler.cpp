@@ -223,14 +223,22 @@ void TimepixHandler::mainThread(void) {
 
         ROS_INFO("%s: starting continuous exposure, exposure time %3.3f s", idname_.c_str(), exposure);
 
-        while (ros::ok() && exposing && opened) {
+        while (ros::ok() && exposing) {
 
-          doSingleExposure();
+          if (!opened && !reOpen()) {
 
-          if (print_utilization_) {
+            ros::Duration reopen_sleep(1.0);
+            reopen_sleep.sleep();
 
-            ROS_INFO_THROTTLE(5, "%s: exposures in progress, time utilization %1.2f%%", idname_.c_str(),
-                              100 * (total_exposing_time / (ros::Time::now() - exposure_started).toSec()));
+          } else {
+
+            doSingleExposure();
+
+            if (print_utilization_) {
+
+              ROS_INFO_THROTTLE(5, "%s: exposures in progress, time utilization %1.2f%%", idname_.c_str(),
+                                100 * (total_exposing_time / (ros::Time::now() - exposure_started).toSec()));
+            }
           }
         }
 
@@ -246,11 +254,19 @@ void TimepixHandler::mainThread(void) {
 
         for (int i = 0; i < batch_exposure_count; i++) {
 
-          if (!opened || !exposing) {
+          if (!exposing) {
             break;
           }
 
-          doSingleExposure();
+          if (!opened && !reOpen()) {
+
+            ros::Duration reopen_sleep(1.0);
+            reopen_sleep.sleep();
+
+          } else {
+
+            doSingleExposure();
+          }
         }
 
         if (print_utilization_) {
