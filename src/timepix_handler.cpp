@@ -160,6 +160,11 @@ void TimepixHandler::doSingleExposure(void) {
     ROS_ERROR("%s: Error during setting clock before an exposure", idname_.c_str());
   }
 
+  if (!setEqualization()) {
+
+    ROS_ERROR("%s: Failed to set the equalization matrix, probably communication problem.", idname_.c_str());
+  }
+
   if (!doExposure(exposure)) {
 
     ROS_ERROR("%s: Error while doing single exposure, \"%s\".", idname_.c_str(), name_.c_str());
