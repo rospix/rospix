@@ -1055,10 +1055,10 @@ bool TimepixHandler::setThresholdCallback(rospix::SetInt::Request &req, rospix::
 
 bool TimepixHandler::setBiasCallback(rospix::SetDouble::Request &req, rospix::SetDouble::Response &res) {
 
-  if (req.value < 5 || req.value > 94) {
+  if (req.value < 5 || req.value > 105) {
 
     res.success = false;
-    res.message = "Bias voltage out of bounds [5.4, 94] V.";
+    res.message = "Bias voltage out of bounds [5.4, 100] V.";
     return true;
   }
 
