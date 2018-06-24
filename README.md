@@ -142,7 +142,7 @@ int16[65536] image
 Get the drivers:
 
 ```bash
-sudo apt-get install libftdi-*
+sudo apt-get install libftdi-* ros-kinetic-cv-bridge
 ```
 
 Create file **99-ftdi-sio.rules** with following lines

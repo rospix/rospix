@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
   newStatus.status_code = sensors.size();
 
   char temp[30];
-  sprintf(temp, "ROSpix started with %d detectors.", int(sensors.size()));
+  sprintf(temp, "rospix started with %d detectors.", int(sensors.size()));
   string msg = string(temp);
   newStatus.message = msg;
 
