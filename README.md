@@ -28,10 +28,10 @@ sensor_0: # the names are fixed, just the number change
   # location of the equalization file
   # location is relative to a directory specified in launch file
   equalization: 'lite_rigaku.bpc' # *.bpc is needed
-  
+
   # print percentage of sensor exposure time to real time
   print_utilization: true
-  
+
   defaults:
     threshold: 340    # [-]
     bias: 10.0        # [Volt]

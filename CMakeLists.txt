@@ -10,29 +10,29 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   dynamic_reconfigure
   message_generation
-)
+  )
 
 add_message_files(FILES
   Status.msg
   Image.msg
-)
+  )
 
 add_service_files(FILES
   BatchExposure.srv
   Exposure.srv
   SetInt.srv
   SetDouble.srv
-)
+  )
 
 generate_messages(DEPENDENCIES
   std_msgs
   geometry_msgs
-)
+  )
 
 catkin_package(
-	INCLUDE_DIRS include
+  INCLUDE_DIRS include
   CATKIN_DEPENDS message_runtime # image_transport roscpp rospy std_msgs
-)
+  )
 
 set(CMAKE_CXX_FLAGS "-std=c++11")
 
@@ -45,16 +45,16 @@ set(CMAKE_CXX_FLAGS "-std=c++11")
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-)
+  )
 
 # Store in CMAKE_DEB_HOST_ARCH var the current build architecture
 execute_process(COMMAND
   dpkg-architecture
-    -qDEB_HOST_ARCH
+  -qDEB_HOST_ARCH
   OUTPUT_VARIABLE
-    CMAKE_DEB_HOST_ARCH
+  CMAKE_DEB_HOST_ARCH
   OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+  )
 
 # Choose the timepix library based on the system architectur
 if(${CMAKE_DEB_HOST_ARCH} MATCHES "armhf")
@@ -73,7 +73,7 @@ add_dependencies(rospix ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TA
 target_link_libraries(rospix
   ${catkin_LIBRARIES}
   ${EXTRALIB_BIN}
-)
+  )
 
 # list devices
 add_executable(list_devices src/list_devices.cpp)
@@ -81,20 +81,20 @@ add_dependencies(list_devices ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPOR
 target_link_libraries(list_devices
   ${catkin_LIBRARIES}
   ${EXTRALIB_BIN}
-)
+  )
 
 install(TARGETS
-		ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-		LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-		RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  )
 
 install(DIRECTORY include/${PROJECT_NAME}/
-		DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-		FILES_MATCHING PATTERN "*.h"
-		PATTERN ".svn" EXCLUDE
-)
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.h"
+  PATTERN ".svn" EXCLUDE
+  )
 
 install(DIRECTORY doc
-		DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  )

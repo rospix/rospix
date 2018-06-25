@@ -1,10 +1,10 @@
-// some ros includes
-#include <ros/ros.h>
+// some ros include
 #include <ros/package.h>
+#include <ros/ros.h>
 
 // some std includes
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 // timepix library
 #include "usb.h"
@@ -18,13 +18,13 @@ int main(int argc, char** argv) {
   //////////////////// List Usb Lite devices \\\\\\\\\\\\\\\\\\\\\
 
   const char* devNames[50];
-  int devCount = 0;
+  int         devCount = 0;
 
   listDevices(devNames, &devCount);
 
   for (int i = 0; i < devCount; i++) {
 
-    ROS_INFO("USB Lite n.%d: \"%s\"", i+1, devNames[i]);
+    ROS_INFO("USB Lite n.%d: \"%s\"", i + 1, devNames[i]);
   }
 
   //////////////////// List Fitpix devices \\\\\\\\\\\\\\\\\\\\\
@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
 
   for (int i = 0; i < devCount; i++) {
 
-    ROS_INFO("FitPix n.%d: \"%s\"", i+1, devNames[i]);
+    ROS_INFO("FitPix n.%d: \"%s\"", i + 1, devNames[i]);
   }
 
   ros::shutdown();

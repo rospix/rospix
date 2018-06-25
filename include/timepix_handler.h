@@ -6,12 +6,12 @@
 #include <string>
 
 // service messages
-#include <rospix/Exposure.h>
 #include <rospix/BatchExposure.h>
-#include <rospix/SetInt.h>
-#include <rospix/SetDouble.h>
-#include <std_srvs/Trigger.h>
+#include <rospix/Exposure.h>
 #include <rospix/Image.h>
+#include <rospix/SetDouble.h>
+#include <rospix/SetInt.h>
+#include <std_srvs/Trigger.h>
 
 #include <thread>
 
@@ -26,7 +26,8 @@ typedef enum {
 
 } InterfaceType_t;
 
-enum {
+enum
+{
   MPX,
   TOT
 } SensorMode_t;
@@ -37,125 +38,118 @@ typedef enum {
   SINGLE_EXPOSURE,
   CONTINOUS_EXPOSURE,
   BATCH_EXPOSURE,
-  
+
 } State_t;
 
 class TimepixHandler {
 
-  public:
+public:
+  // the constructor
+  TimepixHandler(ros::NodeHandle nh, string idname, string equalization_directory);
 
-    // the constructor
-    TimepixHandler(ros::NodeHandle nh, string idname, string equalization_directory);    
+  // open the device
+  bool open(void);
 
-    // open the device
-    bool open(void);
+private:
+  // hold the interface type: usb lite / fitpix
+  InterfaceType_t interface;
 
-  private:
+  // the string identifier of the sensor
+  string name_;
+  string idname_;
 
-    // hold the interface type: usb lite / fitpix
-    InterfaceType_t interface;
+  // whether the device is openned
+  bool opened;
 
-    // the string identifier of the sensor
-    string name_;
-    string idname_;
+  // chip id
+  int    id;  // by this id, the methods are let known about the interface
+  string chip_id;
 
-    // whether the device is openned
-    bool opened;
+  // node handle
+  ros::NodeHandle nh_;
+  string          equalization_directory;
 
-    // chip id 
-    int id; // by this id, the methods are let known about the interface
-    string chip_id;
+  uint16_t dacs[14];
+  uint16_t threshold;
+  double   exposure;
+  int      batch_exposure_count;
+  double   bias;
+  int      mode;
+  int      clock;
+  string   equalization_file;
+  bool     equalization_loaded;
+  bool     exposing;
 
-    // node handle
-    ros::NodeHandle nh_;
-    string equalization_directory;
+  uint16_t  image[MATRIX_SIZE];
+  uint8_t   equalization[MATRIX_SIZE];
+  double    time_total;
+  ros::Time exposure_started;
+  double    total_exposing_time;
+  bool      print_utilization_;
 
-    uint16_t dacs[14];
-    uint16_t threshold;  
-    double exposure;
-    int batch_exposure_count;
-    double bias;
-    int mode;
-    int clock;
-    string equalization_file;
-    bool equalization_loaded;
-    bool exposing;
+  rospix::Image outputImage;
 
-    uint16_t image[MATRIX_SIZE];
-    uint8_t equalization[MATRIX_SIZE];
-    double time_total;
-    ros::Time exposure_started;
-    double total_exposing_time;
-    bool print_utilization_;
-  
-    rospix::Image outputImage;
+private:
+  bool loadDacs(void);
+  bool setThreshold(const uint16_t newThreshold);
+  bool setNewBias(const double newBias);
+  bool loadEqualization(void);
+  bool doExposure(double time);
+  bool readImage(void);
+  bool publishImage(void);
+  bool setEqualization(void);
+  bool setNewClock(const int new_clock);
+  bool setMode(int newmode);
+  bool setClock(int newclock);
+  void doSingleExposure(void);
+  bool compareStrings(const char *a, const char *b);
+  bool reOpen(void);
+  void interruptMeasurement(void);
 
-  private:
+private:
 
-    bool loadDacs(void); 
-    bool setThreshold(const uint16_t newThreshold);
-    bool setNewBias(const double newBias);
-    bool loadEqualization(void);
-    bool doExposure(double time);
-    bool readImage(void);
-    bool publishImage(void);
-    bool setEqualization(void);
-    bool setNewClock(const int new_clock);
-    bool setMode(int newmode);
-    bool setClock(int newclock);
-    void doSingleExposure(void);
-    bool compareStrings(const char * a, const char * b);
-    bool reOpen(void);
-    void interruptMeasurement(void);
+  bool   dummy;
+  int    dummy_photon_flux_;
+  double samplePseudoNormal(double mean, double std);
+  void   simulateExposure(void);
+  double randf(double from, double to);
+  int randi(int from, int to);
+  int  dummy_counter;
+  bool simulate_background_;
+  int  dummy_n_images_;
+  int  optics_dimension_;
 
-  private:
-    
-    bool dummy;
-    int dummy_photon_flux_;
-    double samplePseudoNormal(double mean, double std);
-    void simulateExposure(void);
-    double randf(double from, double to);
-    int randi(int from, int to);
-    int dummy_counter;
-    bool simulate_background_;
-    int dummy_n_images_;
-    int optics_dimension_;
+private:
+  ros::ServiceServer service_single_exposure;
+  ros::ServiceServer service_continuous_exposure;
+  ros::ServiceServer service_batch_exposure;
+  ros::ServiceServer service_set_mode;
+  ros::ServiceServer service_set_exposure;
+  ros::ServiceServer service_set_bias;
+  ros::ServiceServer service_set_clock;
+  ros::ServiceServer service_set_threshold;
+  ros::ServiceServer service_interrupt_measurement;
 
-  private:
+  ros::Publisher image_publisher;
 
-    ros::ServiceServer service_single_exposure;
-    ros::ServiceServer service_continuous_exposure;
-    ros::ServiceServer service_batch_exposure;
-    ros::ServiceServer service_set_mode;
-    ros::ServiceServer service_set_exposure;
-    ros::ServiceServer service_set_bias;
-    ros::ServiceServer service_set_clock;
-    ros::ServiceServer service_set_threshold;
-    ros::ServiceServer service_interrupt_measurement;
+private:
+  std::thread main_thread;
+  void        mainThread(void);
 
-    ros::Publisher image_publisher;
+private:
+  State_t current_state;
+  void changeState(State_t new_state);
 
-  private:
-
-    std::thread main_thread;
-    void mainThread(void);
-
-  private:
-
-    State_t current_state;
-    void changeState(State_t new_state);
-
-  private:
-
-    bool singleExposureCallback(rospix::Exposure::Request &req, rospix::Exposure::Response &res);
-    bool continuouExposureCallback(rospix::Exposure::Request &req, rospix::Exposure::Response &res);
-    bool batchExposureCallback(rospix::BatchExposure::Request &req, rospix::BatchExposure::Response &res);
-    bool setModeCallback(rospix::SetInt::Request &req, rospix::SetInt::Response &res);
-    bool interruptMeasurementCallback(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
-    bool setThresholdCallback(rospix::SetInt::Request &req, rospix::SetInt::Response &res);
-    bool setBiasCallback(rospix::SetDouble::Request &req, rospix::SetDouble::Response &res);
-    bool setExposureCallback(rospix::SetDouble::Request &req, rospix::SetDouble::Response &res);
-    bool setClockCallback(rospix::SetInt::Request &req, rospix::SetInt::Response &res);
+private:
+  bool singleExposureCallback(rospix::Exposure::Request &req, rospix::Exposure::Response &res);
+  bool continuouExposureCallback(rospix::Exposure::Request &req, rospix::Exposure::Response &res);
+  bool batchExposureCallback(rospix::BatchExposure::Request &req, rospix::BatchExposure::Response &res);
+  bool setModeCallback(rospix::SetInt::Request &req, rospix::SetInt::Response &res);
+  bool interruptMeasurementCallback(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
+  bool setThresholdCallback(rospix::SetInt::Request &req, rospix::SetInt::Response &res);
+  bool setBiasCallback(rospix::SetDouble::Request &req, rospix::SetDouble::Response &res);
+  bool setExposureCallback(rospix::SetDouble::Request &req, rospix::SetDouble::Response &res);
+  bool setClockCallback(rospix::SetInt::Request &req, rospix::SetInt::Response &res);
 };
 
 #endif

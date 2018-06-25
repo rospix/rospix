@@ -14,7 +14,7 @@ sensor_0: # the names are fixed, just the number changes
 
   # print percentage of sensor exposure time to real time
   print_utilization: true
-  
+
   defaults:
     threshold: 340    # [-]
     bias: 10.0        # [Volt]
@@ -30,7 +30,7 @@ sensor_0: # the names are fixed, just the number changes
 sensor_1: # the names are fixed, just the number changes
 
   name: 'dummy'
-  
+
   photon_flux: 100            # [photons/s], whole number
   simulate_background: true   # should we simulation radiation background?
   n_images: 20                # how many images of radiation background do we have?
