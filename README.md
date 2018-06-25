@@ -80,8 +80,6 @@ sensor_1:
 
   name: 'dummy'
 
-  simulate_focus: true        # should we simulate optics?
-  optics_dimension: 2         # optics dimensionality 1=1D, 2=2D
   photon_flux: 100            # [photons/s], whole number
   simulate_background: true   # should we simulation radiation background?
   n_images: 20                # how many images of radiation background do we have?

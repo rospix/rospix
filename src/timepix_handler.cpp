@@ -39,7 +39,6 @@ TimepixHandler::TimepixHandler(ros::NodeHandle nh, string idname, string equaliz
     dummy  = true;
     opened = true;
 
-    nh_.param("simulate_focus", dummy_simulate_focus_, false);
     nh_.param("photon_flux", dummy_photon_flux_, 100);
     nh_.param("simulate_background", simulate_background_, false);
     nh_.param("n_images", dummy_n_images_, 0);
@@ -767,36 +766,9 @@ void TimepixHandler::simulateExposure(void) {
   // load some random background noise
   memset(image, 0, MATRIX_SIZE * sizeof(uint16_t));
 
-  // simulate the photons
-  if (dummy_simulate_focus_) {
+  for (int i = 0; i < int(dummy_photon_flux_ * exposure); i++) {
 
-    int x, y;
-    for (int i = 0; i < int(dummy_photon_flux_ * exposure); i++) {
-
-      y = int(samplePseudoNormal(128, 64));
-
-      if (y < 0 || y > 255)
-        continue;
-
-      if (optics_dimension_ == 1)
-        x = floor(randi(0, 256));
-      else {
-
-        x = int(samplePseudoNormal(128, 64));
-
-        if (x < 0 || y > 255)
-          continue;
-      }
-
-      image[y * 256 + x] += randi(1, 250);
-    }
-
-  } else {
-
-    for (int i = 0; i < int(dummy_photon_flux_ * exposure); i++) {
-
-      image[randi(0, 65536)] += randi(1, 250);
-    }
+    image[randi(0, 65536)] += randi(1, 250);
   }
 
   // simulate background

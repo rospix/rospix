@@ -111,7 +111,6 @@ class TimepixHandler {
   private:
     
     bool dummy;
-    bool dummy_simulate_focus_;
     int dummy_photon_flux_;
     double samplePseudoNormal(double mean, double std);
     void simulateExposure(void);
