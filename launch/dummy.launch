@@ -1,0 +1,14 @@
+<launch>
+
+  <!-- launch the node -->
+  <node name="rospix" pkg="rospix" type="rospix" output="screen">
+
+    <!-- load config from config file -->
+    <rosparam file="$(find rospix)/config/dummy.yaml" />
+
+    <!-- publishers -->
+    <remap from="~status" to="~status" />
+
+  </node>
+
+</launch>
