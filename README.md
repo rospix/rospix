@@ -1,9 +1,43 @@
-# ROSPix
+# rospix
 
-ROS package for working with Timepix detectors.
-Allows to conduct measurement with multiple sensors.
-To be able to use it, install Linux OS compatible with ROS (Indigo or newer).
-Install **ROS** and FTDI drivers, see section **Prerequisities**.
+* ROS package for interfacing Timepix detectors on FitPIX-compatible (Advacam) or USB Lite-compatible (UTEF) readouts.
+* Allows measuring with multiple sensors simulatenously.
+* To be able to use it, install Linux OS compatible with ROS (Indigo or newer).
+* Install **ROS** and FTDI drivers, see section **Prerequisities**.
+
+# Prerequsities
+
+## FTDI drivers
+
+Get the drivers:
+
+```bash
+sudo apt-get install "libftdi-*"
+```
+
+Create file **99-ftdi-sio.rules** with following lines
+```bash
+ACTION=="add", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", MODE="0666",  RUN+="/bin/sh -c '/sbin/rmmod ftdi_sio && /sbin/rmmod usbserial'"
+ACTION=="add", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", MODE="0666",  RUN+="/bin/sh -c '/sbin/rmmod ftdi_sio && /sbin/rmmod usbserial'"
+ACTION=="add", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6014", MODE="0666",  RUN+="/bin/sh -c '/sbin/rmmod ftdi_sio && /sbin/rmmod usbserial'"
+```
+and place it in /etc/udev/rules.d/
+
+## Installing ROS
+
+Follow tutorials on http://wiki.ros.org/kinetic/Installation/Ubuntu ... the core is extracted in following commands:
+
+```bash
+sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
+sudo apt-get update
+sudo apt-get install ros-kinetic-desktop-full python-catkin-tools ros-kinetic-cv-bridge
+apt-cache search ros-kinetic
+sudo rosdep init
+rosdep update
+echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
+source ~/.bashrc
+```
 
 ## Connecting to Timepix interface
 
@@ -133,36 +167,6 @@ int32 mode
 int16[65536] image
 ```
 
-# Prerequsities
+# Sample ROS nodes for control and visualization
 
-## FTDI drivers
-
-Get the drivers:
-
-```bash
-sudo apt-get install "libftdi-*" ros-kinetic-cv-bridge
-```
-
-Create file **99-ftdi-sio.rules** with following lines
-```bash
-ACTION=="add", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", MODE="0666",  RUN+="/bin/sh -c '/sbin/rmmod ftdi_sio && /sbin/rmmod usbserial'"
-ACTION=="add", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", MODE="0666",  RUN+="/bin/sh -c '/sbin/rmmod ftdi_sio && /sbin/rmmod usbserial'"
-ACTION=="add", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6014", MODE="0666",  RUN+="/bin/sh -c '/sbin/rmmod ftdi_sio && /sbin/rmmod usbserial'"
-```
-and place it in /etc/udev/rules.d/
-
-## Installing ROS
-
-Follow tutorials on http://wiki.ros.org/kinetic/Installation/Ubuntu ... the core is extracted in following commands:
-
-```bash
-sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
-sudo apt-get update
-sudo apt-get install ros-kinetic-desktop-full python-catkin-tools
-apt-cache search ros-kinetic
-sudo rosdep init
-rosdep update
-echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
-source ~/.bashrc
-```
+Sample applications can be found in the [rospix/utils](https://github.com/rospix/utils) repository.
