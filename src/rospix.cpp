@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
   newStatus.stamp       = ros::Time::now();
   newStatus.status_code = sensors.size();
 
-  char temp[30];
+  char temp[100];
   sprintf(temp, "rospix started with %d detectors.", int(sensors.size()));
   string msg        = string(temp);
   newStatus.message = msg;
