@@ -1,4 +1,4 @@
-# rospix
+# Rospix
 
 * ROS package for interfacing Timepix detectors on FitPIX-compatible (Advacam) or USB Lite-compatible (UTEF) readouts.
 * Allows measuring with multiple sensors simulatenously.
