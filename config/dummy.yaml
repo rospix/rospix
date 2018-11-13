@@ -5,7 +5,7 @@ sensor_0: # the names are fixed, just the number changes
 
   name: 'dummy'
 
-  photon_flux: 0            # [photons/s], whole number
+  photon_flux: 100            # [photons/s], whole number
   simulate_background: true   # should we simulation radiation background?
   n_images: 20                # how many images of radiation background do we have?
 
