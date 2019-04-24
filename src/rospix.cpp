@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
   // iterate over all the detectors in the config file and try to open them
   for (int i = 0; i < number_of_detectors; i++) {
 
-    char id_char[10];
+    char id_char[100];
     sprintf(id_char, "sensor_%d", i);
     string id_str = string(id_char);
 

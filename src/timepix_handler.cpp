@@ -794,11 +794,11 @@ void TimepixHandler::simulateExposure(void) {
 
         for (int j = 0; j < 256; j++) {
 
-          fscanf(f, "%d ", &tempint);
+          [[maybe_unused]] int ret = fscanf(f, "%d ", &tempint);
           image[j + i * 256] += tempint;
         }
 
-        fscanf(f, "\n");
+        [[maybe_unused]] int ret = fscanf(f, "\n");
       }
       fclose(f);
     } else {
@@ -900,7 +900,7 @@ bool TimepixHandler::setModeCallback(rospix::SetInt::Request &req, rospix::SetIn
 
         res.success = true;
         res.message = "Mode changed.";
-        char tempChar[20];
+        char tempChar[100];
         sprintf(tempChar, "Mode changed to %s.", ((mode == MPX) ? "MPX" : "TOT"));
         res.message = string(tempChar);
       }
