@@ -33,7 +33,7 @@ generate_messages(DEPENDENCIES
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS message_runtime # image_transport roscpp rospy std_msgs
+  CATKIN_DEPENDS message_runtime message_generation roscpp std_msgs
   )
 
 ###########

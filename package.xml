@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
-<package>
+<package format="2">
+
   <name>rospix</name>
   <version>1.0.0</version>
   <description>ROS package for controlling Timepix detectors</description>
@@ -13,21 +14,16 @@
   <author email="tomas.baca@fel.cvut.cz">Tomas Baca</author>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>image_transport</build_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>std_msgs</build_depend>
-  <build_depend>dynamic_reconfigure</build_depend>
-  <build_depend>libopencv-dev</build_depend>
-  <build_depend>message_generation</build_depend>
- 
-  <run_depend>message_runtime</run_depend>
-  <run_depend>image_transport</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>std_msgs</run_depend>
-  <run_depend>dynamic_reconfigure</run_depend>
-  <run_depend>libopencv-dev</run_depend>
-  <run_depend>tf</run_depend>
+
+  <depend>roscpp</depend>
+  <depend>std_msgs</depend>
+  <depend>dynamic_reconfigure</depend>
+  <depend>libopencv-dev</depend>
+  <depend>message_runtime</depend>
+  <depend>message_generation</depend>
+  <depend>tf</depend>
 
   <export>
   </export>
+
 </package>
