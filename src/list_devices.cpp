@@ -11,6 +11,8 @@
 
 int main(int argc, char** argv) {
 
+  ROS_INFO("[%s]: started", ros::this_node::getName().c_str());
+
   // initialize node and create no handle
   ros::init(argc, argv, "list_devices");
   ros::NodeHandle nh_ = ros::NodeHandle("~");
