@@ -5,13 +5,10 @@
   <version>1.0.0</version>
   <description>ROS package for controlling Timepix detectors</description>
 
+  <author email="tomas.baca@fel.cvut.cz">Tomas Baca</author>
   <maintainer email="tomas.baca@fel.cvut.cz">Tomas Baca</maintainer>
 
-  <license>GPLv3</license>
-
-  <url type="website">https://github.com:rospix/rospix</url>
-
-  <author email="tomas.baca@fel.cvut.cz">Tomas Baca</author>
+  <license>BSD 3-Clause</license>
 
   <buildtool_depend>catkin</buildtool_depend>
 

@@ -19,7 +19,8 @@ using namespace std;
 
 #define MATRIX_SIZE 65536
 
-typedef enum {
+typedef enum
+{
 
   USB_LITE,
   FITPIX
@@ -32,7 +33,8 @@ enum
   TOT
 } SensorMode_t;
 
-typedef enum {
+typedef enum
+{
 
   IDLE,
   SINGLE_EXPOSURE,
@@ -96,28 +98,26 @@ private:
   bool loadEqualization(void);
   bool doExposure(double time);
   bool readImage(void);
-  bool publishImage(void);
+  void publishImage(void);
   bool setEqualization(void);
   bool setNewClock(const int new_clock);
   bool setMode(int newmode);
   bool setClock(int newclock);
   void doSingleExposure(void);
-  bool compareStrings(const char *a, const char *b);
   bool reOpen(void);
   void interruptMeasurement(void);
 
 private:
-
   bool   dummy;
   int    dummy_photon_flux_;
   double samplePseudoNormal(double mean, double std);
   void   simulateExposure(void);
   double randf(double from, double to);
-  int randi(int from, int to);
-  int  dummy_counter;
-  bool simulate_background_;
-  int  dummy_n_images_;
-  int  optics_dimension_;
+  int    randi(int from, int to);
+  int    dummy_counter;
+  bool   simulate_background_;
+  int    dummy_n_images_;
+  int    optics_dimension_;
 
 private:
   ros::ServiceServer service_single_exposure;
@@ -138,7 +138,7 @@ private:
 
 private:
   State_t current_state;
-  void changeState(State_t new_state);
+  void    changeState(State_t new_state);
 
 private:
   bool singleExposureCallback(rospix::Exposure::Request &req, rospix::Exposure::Response &res);

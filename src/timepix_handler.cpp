@@ -281,20 +281,6 @@ void TimepixHandler::mainThread(void) {
   }
 }
 
-bool TimepixHandler::compareStrings(const char *a, const char *b) {
-
-  for (int i = 0; i < 50; i++) {
-
-    if (a[i] != b[i]) {
-      return false;
-    }
-
-    if (a[i] == '\0' && b[i] == '\0') {
-      return true;
-    }
-  }
-}
-
 bool TimepixHandler::open(void) {
 
   const char *devNames[50];
@@ -314,7 +300,7 @@ bool TimepixHandler::open(void) {
 
     // find the device
     for (int i = 0; i < devCount; i++) {
-      if (compareStrings(devNames[i], name_.c_str())) {
+      if (devNames[i] == name_) {
         error = openDevice(name_.c_str(), &id);
         break;
       }
@@ -337,7 +323,7 @@ bool TimepixHandler::open(void) {
       listDevicesFpx(devNames, &devCount);
       // find the device
       for (int i = 0; i < devCount; i++) {
-        if (compareStrings(devNames[i], name_.c_str())) {
+        if (devNames[i] == name_) {
           error = openDeviceFpx(name_.c_str(), &id);
           break;
         }
@@ -429,7 +415,7 @@ bool TimepixHandler::reOpen(void) {
 
     // find the device
     for (int i = 0; i < devCount; i++) {
-      if (compareStrings(devNames[i], name_.c_str())) {
+      if (devNames[i] == name_) {
         error = openDevice(name_.c_str(), &id);
         break;
       }
@@ -452,7 +438,7 @@ bool TimepixHandler::reOpen(void) {
     listDevicesFpx(devNames, &devCount);
     // find the device
     for (int i = 0; i < devCount; i++) {
-      if (compareStrings(devNames[i], name_.c_str())) {
+      if (devNames[i] == name_) {
         error = openDeviceFpx(name_.c_str(), &id);
         break;
       }
@@ -846,7 +832,7 @@ bool TimepixHandler::readImage(void) {
   }
 }
 
-bool TimepixHandler::publishImage(void) {
+void TimepixHandler::publishImage(void) {
 
   for (int i = 0; i < 65536; i++) {
     outputImage.image[i] = image[i];
@@ -983,9 +969,11 @@ bool TimepixHandler::batchExposureCallback(rospix::BatchExposure::Request &req, 
     res.message = "Meaurement started.";
     return true;
   }
+
+  return false;
 }
 
-bool TimepixHandler::interruptMeasurementCallback(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res) {
+bool TimepixHandler::interruptMeasurementCallback([[maybe_unused]] std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res) {
 
   if (exposing) {
 
